@@ -1,0 +1,38 @@
+declare type GetState = () => Object;
+declare type PromiseAction = Promise<Action>;
+declare type Action = { type: string, payload: Object };
+declare type ThunkAction = (dispatch: Dispatch, getState: GetState) => any
+declare type Dispatch = (action: Action | ThunkAction | PromiseAction | Array<Action>) => any;
+
+declare type ActionProps = {
+  key?: string,
+  name?: string,
+  idKey?: string,
+  useMap?: boolean,
+  apiCall?: () => void,
+  prepareData?: (data: Object) => Object,
+  alternativeResponse?: (response: any) => any,
+  alternativeRequest: (dispatch: Dispatch, apiCallArguments: Array) => any,
+}
+
+declare type ModuleProps = {
+  prefix: string,
+  defaultState?: Object,
+  responseMap?: {
+    message?: string,
+    status?: string,
+    error?: string,
+  }
+}
+
+declare type ActionSettings = {
+  key: ?string,
+  idKey: ?string,
+  actionName: ?string,
+};
+
+declare type Result = {
+  status: number,
+  error: ?string | ?Object,
+  payload: Object | Array
+}
