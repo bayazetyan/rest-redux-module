@@ -1,11 +1,19 @@
 {
   "name": "rest-redux-actions",
-  "version": "1.0.0",
-  "main": "index.js",
-  "files": [
-    "/"
-  ],
+  "version": "1.0.1",
+  "main": "./dist/index.js",
+  "scripts": {
+    "prepublishOnly": "yarn run build",
+    "build": "./node_modules/.bin/babel src --out-dir dist"
+  },
   "repository": "https://bayazetyan@github.com/bayazetyan/rest-redux-actions.git",
   "author": "Artashes Bayazetyan <bayazetyan@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/cli": "^7.0.0",
+    "@babel/core": "^7.0.0",
+    "@babel/plugin-proposal-class-properties": "^7.1.0",
+    "@babel/preset-env": "^7.0.0",
+    "@babel/preset-flow": "^7.0.0"
+  }
 }
