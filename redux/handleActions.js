@@ -1,11 +1,9 @@
 // @flow
 
-const combineReducers = (handlers: { [key: string]: Function }) =>
+const combineReducers = (handlers: { [key: string]: Function }): Function =>
   (prevState: Object, value: Action) => Object.keys(handlers)
     .reduce((newState: Object, key: string) => {
         if (key === value.type) {
-          console.log('LOG ::::::> key <::::::',key)
-          console.log('LOG ::::::> value.type <::::::',value.type)
           return handlers[key](newState, value)
         }
         return newState
@@ -15,7 +13,7 @@ const combineReducers = (handlers: { [key: string]: Function }) =>
 export const handleActions = (
   handlers: { [key: string]: Function },
   defaultState: Object
-) => {
+): () => Reducer => {
   const reducer = combineReducers(handlers);
 
   return (...args) => {

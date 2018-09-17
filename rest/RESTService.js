@@ -1,17 +1,18 @@
 // @flow
 
 const GET = 'GET';
-const PUT = 'PUT';
-const POST = 'POST';
+const PUT = 'UPDATE';
+const POST = 'CREATE';
 const DELETE = 'DELETE';
-const FETCH_TIMEOUT = 60 * 1000;
+
+const defaultHeaders = {
+  'Accept': 'application/json',
+  'Content-Type': 'application/json',
+};
 
 const defaultSettings = {
-  headers: {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-  },
-  token: 'bearer'
+  fetchTimeOut: 60 * 1000,
+  timeOutMessage: 'Request timed out',
 };
 
 export default class RESTService {
@@ -25,14 +26,13 @@ export default class RESTService {
     RESTService.settings = { ...RESTService.settings, ...settings };
     RESTService.apiUrl = settings.apiUrl || '';
     RESTService.baseUrl = settings.baseUrl || '';
-    RESTService.applicationId = settings.applicationId || '';
   };
 
   static saveToken = (token) => {
     RESTService.token = token;
   };
 
-  f = (path, method = GET, data = null, options = null) => {
+  _fetch = (path, method = GET, data = null, options = null) => {
     let requestUrl = `${RESTService.baseUrl}${RESTService.apiUrl}${path}`;
     let didTimeOut = false;
     let body = data;
@@ -51,8 +51,8 @@ export default class RESTService {
     return new Promise(function(resolve, reject) {
       const timeout = setTimeout(() => {
         didTimeOut = true;
-        reject(new Error('Request timed out'));
-      }, FETCH_TIMEOUT);
+        reject(new Error(RESTService.settings.timeOutMessage));
+      }, RESTService.settings.fetchTimeOut);
 
       fetch(requestUrl, requestOptions)
         .then(function(response) {
@@ -68,27 +68,25 @@ export default class RESTService {
   };
 
   getHeaders = () => {
-    const { headers, token } = RESTService.settings;
+    const { headers, token, applicationId } = RESTService.settings;
 
     const requestHeaders = {
-      'X-CLIENT-TYPE': 'user_mobile',
-      'X-APPLICATION-ID': RESTService.applicationId,
+      ...defaultHeaders,
       ...headers,
-      ...this.getTokenHeader(token)
+      ...this.getToken(token),
     };
+
+    if (applicationId) {
+      requestHeaders[applicationId] = RESTService.applicationId;
+    }
 
     return { headers: requestHeaders };
   };
 
-  getTokenHeader = (type) => {
-    switch (type.toUpperCase()) {
-      case 'bearer':
-        return { Authorization: `Bearer ${RESTService.token}`, };
-      case 'x-token':
-        return { 'X-USER-TOKEN': `${RESTService.token}`, };
-      default:
-        return {};
-    }
+  getToken = (token) => {
+    return token ? {
+      [token]: RESTService.token
+    } : {};
   };
 
   urlWithParams = obj => {
@@ -122,11 +120,11 @@ export default class RESTService {
     return options;
   };
 
-  get = (path, data = null, options = null) => this.f(path, GET, data, options);
+  get = (path, data = null, options = null) => this._fetch(path, GET, data, options);
 
-  post = (path, data, options = null) => this.f(path, POST, data, options);
+  post = (path, data, options = null) => this._fetch(path, POST, data, options);
 
-  put = (path, data, options = null) => this.f(path, PUT, data, options);
+  put = (path, data, options = null) => this._fetch(path, PUT, data, options);
 
-  delete = (path, options = null) => this.f(path, DELETE, null, options);
+  delete = (path, data, options = null) => this._fetch(path, DELETE, data, options);
 }

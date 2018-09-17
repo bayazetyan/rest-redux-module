@@ -109,7 +109,6 @@ export default class ReduxModule {
 
       return apiCall(...apiCallArguments)
         .then(response => {
-
           if (!isArray(response) &&
             response[status] !== void(0) &&
             (response[status] === 'failure' || response[status] !== 0)

@@ -1,9 +1,7 @@
 // @flow
+import { ERROR_TEXT_START, ERROR_TEXT_END } from './../constants';
 
-const ERROR_TEXT_START = 'bindActionCreators expected an object or a function, instead received';
-const ERROR_TEXT_END = 'Did you write "import ActionCreators from" instead of "import * as ActionCreators from"?';
-
-const getErrorText = (actionCreators: {[key: string]: Function}) => {
+const getErrorText = (actionCreators: {[key: string]: Function}): string => {
   const actionCreatorsType = actionCreators === null ? 'null' : typeof actionCreators;
 
   return `${ERROR_TEXT_START} ${actionCreatorsType} ${ERROR_TEXT_END}`;

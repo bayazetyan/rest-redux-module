@@ -1,6 +1,7 @@
 declare type GetState = () => Object;
 declare type PromiseAction = Promise<Action>;
 declare type Action = { type: string, payload: Object };
+declare type Reducer = (state: Object, action: Action) => Object;
 declare type ThunkAction = (dispatch: Dispatch, getState: GetState) => any
 declare type Dispatch = (action: Action | ThunkAction | PromiseAction | Array<Action>) => any;
 
