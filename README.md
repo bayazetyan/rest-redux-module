@@ -6,6 +6,7 @@ This tool is used to manage the application state. It makes the application stat
  ## Documentation
 
 [REST Service](#rest)
+
 [Redux Module](#redux-module)
 
 ### Install
@@ -32,7 +33,7 @@ For example you can use this files structure
 |   |   ├── Products.js
 |   ├── services  
 |   |   ├── api
-|	|	|	├── ProductsAPI.js
+|   |   |   ├── ProductsAPI.js
 └── App.js  
 ```
 
@@ -80,12 +81,12 @@ import { getProducts } from '../services/api/ProductsAPI';
 const settings = {  
   prefix: 'PRODUCTS',  // set actions prefix
   responseMap: {  // If your API used alternative response structure you can manipulate change responseMap object or use alternativeResponse method in action creator
-	  message: 'message',  
-	  status: 'status',  
-	  error: 'error',
+    message: 'message',  
+    status: 'status',  
+    error: 'error',
  },
  defaultState: { // default state
-	 data: []
+    data: []
  }
 };
 
@@ -96,7 +97,7 @@ const fetchProductsAction = productModule.createGetAction({
 });
 
 export actions = {
-	fetchProducts: fetchProductsAction
+  fetchProducts: fetchProductsAction
 }
 
 export default productModule.createReducer();
@@ -111,8 +112,8 @@ import { actions } from '../reducers/products-reducer';
 import { bindComplexActionCreators } from 'rest-redux-actions';  
   
 const mapStatToProps = (state) => {
-	return { ...state.products }
-}  
+  return { ...state.products }
+}; 
   
 const mapDispatchToProps = (dispatch) => ({  
   ...bindComplexActionCreators(actions, dispatch),
@@ -127,24 +128,24 @@ export default connect(mapStatToProps, mapDispatchToProps)(Product);
 import React, { PureComponent } from 'react';
 
 export default Products extends PureComponent {
-	componentDidMoint() {
-		this.props.getProducts();
-	}
-	
-	render () {
-		console.log(this.props.data)
-		// log
-		//{
-		//	status: 2 // 0 - error, 1 - pending, 2 - succes
-		//	payload: [], // your data,
-		//	error: null // error text
-		//}
-		return (
-			<div>
-			 ...some ui elemnts
-			</div>
-		)
-	}
+  componentDidMoint() {
+    this.props.getProducts();
+  }
+        
+  render () {
+    console.log(this.props.data)
+    // log
+    //{
+    //	status: 2 // 0 - error, 1 - pending, 2 - success
+    //	payload: [], // your data,
+    //	error: null // error text
+    //}
+    return (
+        <div>
+         ...some ui elements
+        </div>
+    )
+  }
 }
 ```
 
