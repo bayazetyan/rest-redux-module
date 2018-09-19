@@ -59,7 +59,7 @@ export default class ReduxModule {
   createAction = (props: ActionProps, type: string): Function => {
     const { name, key, idKey, apiCall, withoutResponse } = props;
 
-    this.withoutResponse = !apiCall || withoutResponse;
+    this[`${key}withoutResponse`] = !apiCall || withoutResponse;
 
     const actionName = name || type;
     this.getActionGroup(type).push({
@@ -211,7 +211,7 @@ export default class ReduxModule {
 
     if (this.defaultState) {
       Object.keys(this.defaultState).forEach(key => {
-        if (this.withoutResponse) {
+        if (this[`${key}withoutResponse`]) {
           defaultState[key] = this.defaultState[key]
         } else {
           defaultState[key] = {
