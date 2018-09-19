@@ -11,8 +11,8 @@ const defaultHeaders = {
 };
 
 const defaultSettings = {
-  fetchTimeOut: 60 * 1000,
-  timeOutMessage: 'Request timed out',
+  fetchTimeout: 60 * 1000,
+  timeoutMessage: 'Request timed out',
 };
 
 export default class RESTService {
@@ -51,8 +51,8 @@ export default class RESTService {
     return new Promise(function(resolve, reject) {
       const timeout = setTimeout(() => {
         didTimeOut = true;
-        reject(new Error(RESTService.settings.timeOutMessage));
-      }, RESTService.settings.fetchTimeOut);
+        reject(new Error(RESTService.settings.timeoutMessage));
+      }, RESTService.settings.fetchTimeout);
 
       fetch(requestUrl, requestOptions)
         .then(function(response) {

@@ -47,9 +47,9 @@ RESTService.init({
   baseUrl: '', // Your App base url here
   apiUrl: '', //  Your App API url here
   applicationId: 'APP_ID', // Your App application id name (optional), default null,
-  fetchTimeOut: 60 * 1000, // Request time out default 1m
-  timeOutMessage: 'Request timed out',
-  token: '' // The authentification token name
+  fetchTimeout: 60 * 1000, // Request time out default 1m
+  timeoutMessage: 'Request timed out',
+  token: '' // The authentication token name
 });
 ```
 

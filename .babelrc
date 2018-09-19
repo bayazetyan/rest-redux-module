@@ -1,9 +1,6 @@
 {
   "presets": [
-    ["@babel/preset-env", {
-      "useBuiltIns": "usage",
-      "modules": false
-    }],
+    "@babel/preset-env",
     "@babel/preset-flow"
   ],
   "plugins": [
