@@ -112,9 +112,8 @@ export default class ReduxModule {
 
       return apiCall(...apiCallArguments)
         .then(response => {
-          if (!isArray(response) &&
-            response[status] !== void(0) &&
-            (response[status] === 'failure' || response[status] !== 0)
+          if (response[status] !== void(0)
+            && (response[status] === 'failure' || response[status] !== 0)
           ) {
             dispatch({
               type: actionType,
@@ -123,26 +122,15 @@ export default class ReduxModule {
                 error: response[message] || response.error
               }
             });
-          }
+          } else {
+            const hasAlternativeResponse = isFunction(alternativeResponse);
+            const responseData = hasAlternativeResponse ? alternativeResponse(response) : response[data];
 
-          if (isFunction(alternativeResponse)) {
             const payload = withoutStatus
-              ? alternativeResponse(response)
+              ? responseData
               : {
                 ...successResult,
-                payload: alternativeResponse(response)
-              };
-
-            dispatch({
-              payload,
-              type: actionType,
-            });
-          } else if (response[data]) {
-            const payload = withoutStatus
-              ? alternativeResponse(response)
-              : {
-                ...successResult,
-                payload: response[data]
+                payload: responseData
               };
 
             dispatch({
