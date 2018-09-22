@@ -7,7 +7,7 @@ export const getReducers = (
   action: Action,
   settings: ActionSettings
 ): Object => {
-  const { idKey, key, useMap = false}  = settings;
+  const { idKey, key, useMap = false }  = settings;
   const data = idKey ? createMap(action.payload, idKey, useMap) : action.payload;
 
   if (!data) {

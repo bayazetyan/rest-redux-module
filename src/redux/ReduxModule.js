@@ -65,6 +65,7 @@ export default class ReduxModule {
     this.getActionGroup(type).push({
       idKey,
       actionName,
+      withoutStatus,
       withoutResponse,
       key: key || resultKey
     });
@@ -93,7 +94,7 @@ export default class ReduxModule {
     apiCallArguments: any[],
     actionName: string
   ): Action | Promise<Action> => {
-    const { apiCall, alternativeResponse, alternativeRequest } = props;
+    const { apiCall, alternativeResponse, alternativeRequest, withoutStatus } = props;
     const { data, message, status } = this.responseMap;
 
     const actionType = `${actionName}_${this.prefix}`;
@@ -105,7 +106,9 @@ export default class ReduxModule {
     if (!apiCall) {
       this.localAction(dispatch, actionType, apiCallArguments, props)
     } else {
-      dispatch({ type: actionType, payload: pendingResult });
+      if (!withoutStatus) {
+        dispatch({ type: actionType, payload: pendingResult });
+      }
 
       return apiCall(...apiCallArguments)
         .then(response => {
@@ -123,20 +126,28 @@ export default class ReduxModule {
           }
 
           if (isFunction(alternativeResponse)) {
-            dispatch({
-              type: actionType,
-              payload: {
+            const payload = withoutStatus
+              ? alternativeResponse(response)
+              : {
                 ...successResult,
                 payload: alternativeResponse(response)
-              }
+              };
+
+            dispatch({
+              payload,
+              type: actionType,
             });
           } else if (response[data]) {
-            dispatch({
-              type: actionType,
-              payload: {
+            const payload = withoutStatus
+              ? alternativeResponse(response)
+              : {
                 ...successResult,
                 payload: response[data]
-              }
+              };
+
+            dispatch({
+              payload,
+              type: actionType,
             });
           }
 
