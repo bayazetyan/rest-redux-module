@@ -1,6 +1,6 @@
 {
   "name": "rest-redux-actions",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "main": "./dist/index.js",
   "scripts": {
     "prepublishOnly": "yarn run build",

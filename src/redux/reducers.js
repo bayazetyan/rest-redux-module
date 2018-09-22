@@ -1,6 +1,6 @@
 // @flow
 import { createMap, cloneMap } from '../utils/map';
-import { isMap, isArray } from '../utils/misk';
+import { isMap, isArray, isObject } from '../utils/misk';
 
 export const getReducers = (
   state: Object,
@@ -14,11 +14,18 @@ export const getReducers = (
     return state
   }
 
-  return {
-    ...state,
-    [key]: {
-      ...state[key],
-      ...data
+  if (!isArray(action.payload) && !isObject(action.payload)) {
+    return {
+      ...state,
+      [key]: data
+    }
+  } else {
+    return {
+      ...state,
+      [key]: {
+        ...state[key],
+        ...data
+      }
     }
   }
 };
