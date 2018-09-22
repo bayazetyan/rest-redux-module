@@ -1,8 +1,8 @@
 // @flow
 
 const GET = 'GET';
-const PUT = 'UPDATE';
-const POST = 'CREATE';
+const PUT = 'PUT';
+const POST = 'POST';
 const DELETE = 'DELETE';
 
 const defaultHeaders = {
