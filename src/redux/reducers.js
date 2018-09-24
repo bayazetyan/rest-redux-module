@@ -95,7 +95,7 @@ export const updateReducers = (
   action: Action,
   settings: ActionSettings
 ): Object => {
-  const {idKey, key } = settings;
+  const { idKey, key } = settings;
   const item = action.payload.payload || action.payload;
 
   if (isMap(state[key])) {
@@ -159,14 +159,14 @@ export const deleteReducers = (
   action: Action,
   settings: ActionSettings
 ): Object => {
-  const {idKey, key} = settings;
-  const item = action.payload.payload || action.payload;
+  const { idKey, key } = settings;
+  const itemId = action.payload;
 
   if (isMap(state[key])) {
-    const data = state[key].payload;
+    const data = state[key];
     const cloneData = cloneMap(data);
 
-    cloneData.delete(item[idKey]);
+    cloneData.delete(itemId);
 
     return {
       ...state,
@@ -176,19 +176,18 @@ export const deleteReducers = (
     const data = state[key].payload;
     const cloneData = cloneMap(data);
 
-    cloneData.delete(item[idKey], item);
+    cloneData.delete(itemId);
 
     return {
       ...state,
       [key]: {
         ...state[key],
-        ...action.payload,
         payload: cloneData
       }
     }
   } else if (isArray(state[key])) {
     const cloneData = [ ...state[key] ];
-    const updatedData = cloneData.filter(item => item[idKey] !== action.payload[idKey]);
+    const updatedData = cloneData.filter(item => item[idKey] !== itemId);
 
     return {
       ...state,
@@ -196,13 +195,12 @@ export const deleteReducers = (
     }
   } else if (state[key].payload && isArray(state[key].payload)) {
     const cloneData = [ ...state[key].payload ];
-    const updatedData = cloneData.filter(item => item[idKey] !== action.payload.payload[idKey]);
+    const updatedData = cloneData.filter(item => item[idKey] !== itemId);
 
     return {
       ...state,
       [key]: {
         ...state[key],
-        ...action.payload,
         payload: updatedData
       }
     }
