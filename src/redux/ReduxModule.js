@@ -94,7 +94,7 @@ export default class ReduxModule {
     apiCallArguments: any[],
     actionName: string
   ): Action | Promise<Action> => {
-    const { apiCall, alternativeResponse, alternativeRequest, withoutStatus } = props;
+    const { apiCall, alternativeResponse, alternativeRequest, withoutStatus, updateWithLocale } = props;
     const { data, message, status } = this.responseMap;
 
     const actionType = `${actionName}_${this.prefix}`;
@@ -125,12 +125,13 @@ export default class ReduxModule {
           } else {
             const hasAlternativeResponse = isFunction(alternativeResponse);
             const responseData = hasAlternativeResponse ? alternativeResponse(response) : response[data];
+            const payloadData = updateWithLocale ? apiCallArguments[0] : responseData;
 
             const payload = withoutStatus
-              ? responseData
+              ? payloadData
               : {
                 ...successResult,
-                payload: responseData
+                payload: payloadData
               };
 
             dispatch({
