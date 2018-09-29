@@ -113,7 +113,7 @@ export default class ReduxModule {
       return apiCall(...apiCallArguments)
         .then(response => {
           if (response[status] !== void(0)
-            && (response[status] === 'failure' || response[status] !== 0)
+            && (response[status] === 'failure' || (response[status] !== 0 && status === 'response_code'))
           ) {
             dispatch({
               type: actionType,
