@@ -82,6 +82,14 @@ export const addReducers = (
         ]
       }
     }
+  } else if (isObject(state[key].payload)) {
+    return {
+      ...state,
+      [key]: {
+        ...state[key],
+        ...action.payload,
+      }
+    }
   }
 
   return {
@@ -144,6 +152,14 @@ export const updateReducers = (
         ...state[key],
         ...action.payload,
         payload: cloneData
+      }
+    }
+  } else if (isObject(state[key].payload)) {
+    return {
+      ...state,
+      [key]: {
+        ...state[key],
+        ...action.payload,
       }
     }
   }
