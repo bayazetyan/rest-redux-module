@@ -13,6 +13,8 @@ const defaultHeaders = {
 const defaultSettings = {
   fetchTimeout: 60 * 1000,
   timeoutMessage: 'Request timed out',
+  logger: false,
+  options: {},
 };
 
 export default class RESTService {
@@ -22,29 +24,35 @@ export default class RESTService {
   static applicationId;
   static settings = defaultSettings;
 
-  static init = (settings = {}) => {
+  static init = (settings: Object = {}): void => {
     RESTService.settings = { ...RESTService.settings, ...settings };
     RESTService.apiUrl = settings.apiUrl || '';
     RESTService.baseUrl = settings.baseUrl || '';
   };
 
-  static saveToken = (token) => {
+  static saveToken = (token): void => {
     RESTService.token = token;
   };
 
-  _fetch = (path, method = GET, data = null, options = null) => {
+  _fetch = (
+    path: string,
+    method: string = GET,
+    data: ?Object = null,
+    options: ?Object = null
+  ): Promise => {
     let requestUrl = `${RESTService.baseUrl}${RESTService.apiUrl}${path}`;
     let didTimeOut = false;
-    let body = data;
+    let body = null;
 
-    if (method === GET && body) {
-      const urlWithParams = this.urlWithParams(body);
+    if (data) {
+      if (method === GET || RESTService.settings.headers['Content-Type'] === 'application/x-www-form-urlencoded') {
+        const urlWithParams = this.urlWithParams(data);
 
-      requestUrl += `?${urlWithParams}`;
+        requestUrl += `?${urlWithParams}`;
+      } else if (RESTService.settings.headers['Content-Type'] === 'application/json') {
+        body = JSON.stringify(data);
+      }
     }
-
-    if (body && method !== GET)
-      body = JSON.stringify(data);
 
     const requestOptions = this.mergeOptions(method, body, options);
 
@@ -53,6 +61,26 @@ export default class RESTService {
         didTimeOut = true;
         reject(new Error(RESTService.settings.timeoutMessage));
       }, RESTService.settings.fetchTimeout);
+
+      if ((typeof __REMOTEDEV__ !== 'undefined' || process.env.NODE_ENV === 'development')
+        && RESTService.settings.logger)
+      {
+        console.group(`${requestUrl} - ${method}`);
+        console.log(
+          '%c Request Headers: \t',
+          'color: #FC4044; font-size: 11px; font-weight: bold;',
+          requestOptions.headers
+        );
+
+        if (data)
+          console.log(
+            '%c Request Body: \t',
+            'color: #00cc4b; font-size: 11px; font-weight: bold;',
+            data
+          );
+
+        console.groupEnd();
+      }
 
       fetch(requestUrl, requestOptions)
         .then(function(response) {
@@ -67,13 +95,13 @@ export default class RESTService {
     });
   };
 
-  getHeaders = () => {
-    const { headers, token, applicationId } = RESTService.settings;
+  getHeaders = (): Object => {
+    const { headers, tokenType, applicationId } = RESTService.settings;
 
     const requestHeaders = {
       ...defaultHeaders,
       ...headers,
-      ...this.getToken(token),
+      ...this.getToken(tokenType),
     };
 
     if (applicationId) {
@@ -83,48 +111,66 @@ export default class RESTService {
     return { headers: requestHeaders };
   };
 
-  getToken = (token) => {
-    return token ? {
-      [token]: RESTService.token
+  getToken = (tokenType: string): {[key: string]: string} | Object => {
+    return tokenType ? {
+      [tokenType]: RESTService.token
     } : {};
   };
 
-  urlWithParams = obj => {
+  urlWithParams = (data: {[key: string]: any}): string => {
     let url = '';
 
-    Object.keys(obj).forEach(key => {
+    Object.keys(data).forEach(key => {
       if (Array.isArray(key))
-        url += `${this.parseArray(key, obj[key])}&`;
+        url += `${this.parseArray(key, data[key])}&`;
       else
-        url += `${key}=${obj[key]}&`;
+        url += `${key}=${data[key]}&`;
     });
 
     return url.substring(0, url.length - 1);
   };
 
-  parseArray = (values, paramName) => {
+  parseArray = (values: string[], paramName: string): string => {
     const data = values.map(value => `${paramName}[]=${value}`);
+
     return data.join('&');
   };
 
-  mergeOptions = (method, body, opt) => {
+  mergeOptions = (method: string, body: ?string | ?Object, opt: ?Object = {}): Object => {
     const options = {
       method,
+      ...RESTService.settings.options,
       ...opt,
       ...this.getHeaders(),
     };
 
-    if (body && method !== GET)
+    if (body)
       options.body = body;
 
     return options;
   };
 
-  get = (path, data = null, options = null) => this._fetch(path, GET, data, options);
+  get = (
+    path: string,
+    data: ?Object = null,
+    options: ?Object = null
+  ) => this._fetch(path, GET, data, options);
 
-  post = (path, data, options = null) => this._fetch(path, POST, data, options);
+  post = (
+    path: string,
+    data: ?Object,
+    options: ?Object = null
+  ) => this._fetch(path, POST, data, options);
 
-  put = (path, data, options = null) => this._fetch(path, PUT, data, options);
+  put = (
+    path: string,
+    data: ?Object,
+    options: ?Object = null
+  ) => this._fetch(path, PUT, data, options);
 
-  delete = (path, data, options = null) => this._fetch(path, DELETE, data, options);
+  delete = (
+    path: string,
+    data: ?Object,
+    options: ?Object = null
+  ) => this._fetch(path, DELETE, data, options);
 }

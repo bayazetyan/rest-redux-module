@@ -225,7 +225,11 @@ export const deleteReducers = (
   return state
 };
 
-export const clearReducers = (state: Object, action: Action, settings: ActionSettings) => {
+export const clearReducers = (
+  state: Object,
+  action: Action,
+  settings: ActionSettings
+) => {
   const { key }  = settings;
 
   return {

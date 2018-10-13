@@ -1,7 +1,5 @@
 // @flow
 
-import {isMap} from "./misk";
-
 export const createMap = (data: Action | Array, idKey, useMap: ?boolean): Result => {
   const map = useMap ? new Map() : {};
   const list = data.payload || data;
@@ -16,7 +14,7 @@ export const createMap = (data: Action | Array, idKey, useMap: ?boolean): Result
   return !data.payload ? map : { ...data, payload: map };
 };
 
-export const cloneMap = (data: Map | Object, useMap: ?boolean) => {
-  return useMap ? new Map(data) : { ...data };
+export const cloneMap = (data: Map): Map => {
+  return new Map(data);
 };
 

@@ -1,6 +1,8 @@
+//@flow
+
 import * as Actions from './actionTypes'
 import { handleActions } from './handleActions';
-import { isFunction, isArray } from '../utils/misk';
+import { isFunction } from '../utils/misk';
 
 import {
   getReducers,
@@ -15,12 +17,19 @@ const pendingResult = { status: 1, error: null };
 const successResult = { status: 2, error: null };
 
 const defaultResponseMap = {
+  successStatusValue: 'success',
   message: 'message',
   status: 'status',
   data: 'data',
 };
 
 export default class ReduxModule {
+  static globalSettings = {};
+
+  static init = (settings = {}) => {
+    ReduxModule.globalSettings = settings;
+  };
+
   constructor(props: ModuleProps) {
     const {
       prefix,
@@ -30,7 +39,7 @@ export default class ReduxModule {
 
     this.prefix = prefix;
 
-    // Actions groups
+    // Action groups
     this.getActions = [];
     this.addActions = [];
     this.updateActions = [];
@@ -38,7 +47,11 @@ export default class ReduxModule {
     this.clearActions = [];
 
     this.defaultState = defaultState;
-    this.responseMap = {...defaultResponseMap, ...responseMap};
+    this.responseMap = {
+      ...defaultResponseMap,
+      ...ReduxModule.globalSettings.responseMap,
+      ...responseMap,
+    };
   }
 
   getActionGroup = (type: string): Array => {
@@ -56,16 +69,36 @@ export default class ReduxModule {
     }
   };
 
-  createAction = (props: ActionProps, type: string): Function => {
-    const { name, key, idKey, apiCall, withoutStatus, withoutResponse } = props;
+  getResponseData = (response: any, returnResponse: boolean): any => {
+    const { data } = this.responseMap;
+
+    try {
+      return returnResponse ? response : response[data];
+    } catch (e) {
+      return response
+    }
+  };
+
+  _createAction = (props: ActionProps, type: string): Function => {
+    const {
+      key,
+      name,
+      idKey,
+      apiCall,
+      withoutStatus,
+      returnResponse,
+      withoutResponse,
+    } = props;
 
     this[`${key}withoutStatus`] = !apiCall || withoutStatus;
 
     const actionName = name || type;
+
     this.getActionGroup(type).push({
       idKey,
       actionName,
       withoutStatus,
+      returnResponse,
       withoutResponse,
       key: key || resultKey
     });
@@ -78,24 +111,23 @@ export default class ReduxModule {
     };
   };
 
-  createGetAction = (props: ActionProps): Function => this.createAction(props, Actions.GET);
-
-  createAddAction = (props: ActionProps): Function => this.createAction(props, Actions.CREATE);
-
-  createUpdateAction = (props: ActionProps): Function => this.createAction(props, Actions.UPDATE);
-
-  createDeleteAction = (props: ActionProps): Function => this.createAction(props, Actions.DELETE);
-
-  createClearAction = (props: ActionProps): Function => this.createAction(props, Actions.CLEAR);
-
   apiCallAction = (
     dispatch: Dispatch,
     props: ActionProps,
     apiCallArguments: any[],
     actionName: string
   ): Action | Promise<Action> => {
-    const { apiCall, alternativeResponse, alternativeRequest, withoutStatus, updateWithLocale } = props;
-    const { data, message, status } = this.responseMap;
+    const {
+      apiCall,
+      callBack,
+      withoutStatus,
+      returnResponse,
+      localUpdate,
+      alternativeRequest,
+      alternativeResponse,
+    } = props;
+
+    const { message, status, successStatusValue } = this.responseMap;
 
     const actionType = `${actionName}_${this.prefix}`;
 
@@ -104,19 +136,17 @@ export default class ReduxModule {
     }
 
     if (!apiCall) {
-      this.localAction(dispatch, actionType, apiCallArguments, props)
+      this.mainAction(dispatch, actionType, apiCallArguments, props)
     } else {
       if (!withoutStatus) {
-        dispatch({ type: actionType, payload: pendingResult });
+        dispatch({ type: `${actionType}_PENDING`, payload: pendingResult });
       }
 
       return apiCall(...apiCallArguments)
         .then(response => {
-          if (response[status] !== void(0)
-            && (response[status] === 'failure' || (response[status] !== 0 && status === 'response_code'))
-          ) {
+          if (response[status] !== void(0) && response[status] !== successStatusValue) {
             dispatch({
-              type: actionType,
+              type: `${actionType}_ERROR`,
               payload: {
                 status: 0,
                 error: response[message] || response.error
@@ -124,26 +154,30 @@ export default class ReduxModule {
             });
           } else {
             const hasAlternativeResponse = isFunction(alternativeResponse);
-            const responseData = hasAlternativeResponse ? alternativeResponse(response) : response[data];
-            const payloadData = updateWithLocale ? apiCallArguments[0] : responseData;
+            const responseData = hasAlternativeResponse
+              ? alternativeResponse(response)
+              : this.getResponseData(response, returnResponse);
+
+            const payloadData = localUpdate ? apiCallArguments[0] : responseData;
 
             const payload = withoutStatus
               ? payloadData
-              : {
-                ...successResult,
-                payload: payloadData
-              };
+              : { ...successResult, payload: payloadData };
 
             dispatch({
               payload,
-              type: actionType,
+              type: `${actionType}_SUCCESS`,
             });
+          }
+
+          if (isFunction(callBack)) {
+            callBack(response, dispatch)
           }
 
           return response;
         }).catch(response => {
           dispatch({
-            type: actionType,
+            type: `${actionType}_ERROR`,
             payload:  {
               status: 0,
               error: response[message] || response.error,
@@ -155,7 +189,7 @@ export default class ReduxModule {
     }
   };
 
-  localAction = (
+  mainAction = (
     dispatch: Dispatch,
     actionType: string,
     actionArguments: Array,
@@ -165,9 +199,17 @@ export default class ReduxModule {
     const data = !!prepareData ? prepareData(actionArguments[0]) : actionArguments[0];
 
     return dispatch({
-      type: actionType,
+      type: `${actionType}_SUCCESS`,
       payload: data
     });
+  };
+
+  _createActionFullName = (actionName: string): string => {
+    const pendingAction = `${actionName}_PENDING`;
+    const errorAction = `${actionName}_ERROR`;
+    const successAction = `${actionName}_SUCCESS`;
+
+    return `${successAction}|${pendingAction}|${errorAction}`;
   };
 
   combineActions = (actionSettings: ActionSettings[], type: string) => {
@@ -175,7 +217,8 @@ export default class ReduxModule {
 
     actionSettings.forEach(settings => {
       if (!settings.withoutResponse) {
-        reducer[`${settings.actionName}_${this.prefix}`] = (state, action) => {
+        const actionType = `${settings.actionName}_${this.prefix}`;
+        reducer[this._createActionFullName(actionType)] = (state, action) => {
           if (type === Actions.GET) {
             return getReducers(state, action, settings)
           } else if (type === Actions.CREATE) {
@@ -223,6 +266,16 @@ export default class ReduxModule {
 
     return defaultState;
   };
+
+  createAction = (props: ActionProps): Function => this._createAction(props, Actions.GET);
+
+  createAddAction = (props: ActionProps): Function => this._createAction(props, Actions.CREATE);
+
+  createUpdateAction = (props: ActionProps): Function => this._createAction(props, Actions.UPDATE);
+
+  createDeleteAction = (props: ActionProps): Function => this._createAction(props, Actions.DELETE);
+
+  createClearAction = (props: ActionProps): Function => this._createAction(props, Actions.CLEAR);
 
   createReducer = () => {
     return handleActions(this.dataReducer(), this.generateDefaultState());

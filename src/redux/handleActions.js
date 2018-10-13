@@ -2,11 +2,15 @@
 
 const combineReducers = (handlers: { [key: string]: Function }): Function =>
   (prevState: Object, value: Action) => Object.keys(handlers)
-    .reduce((newState: Object, key: string) => {
-        if (key === value.type) {
-          return handlers[key](newState, value)
-        }
-        return newState
+    .reduce((newState: Object, keys: string) => {
+      const keyValues = keys.split('|');
+
+      if (keyValues.includes(value.type)) {
+        return handlers[keys](newState, value)
+      }
+
+      return newState;
+
       }, prevState
     );
 
