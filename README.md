@@ -1,29 +1,30 @@
-
-# Rest Redux Actions
+# README
 
 This tool is used to manage the application state. It makes the application state more predictable and more powerful.
 
- ## Documentation
+## Documentation
 
-[REST Service](#rest)
+[REST Service](./#rest)
 
-[Redux Module](#redux-module)
+[Redux Module](./#redux-module)
 
 ### Install
-```
+
+```text
 yarn add rest-redux-actions
 ```
+
 or
 
-```
-npm install --save rest-redux-actions 
+```text
+npm install --save rest-redux-actions
 ```
 
 ## Getting Started
 
 For example you can use this files structure
 
-```
+```text
 ├── src/  
 |   ├── reducers  
 |   |   ├── products-reducer.js  
@@ -34,11 +35,11 @@ For example you can use this files structure
 |   ├── services  
 |   |   ├── api
 |   |   |   ├── ProductsAPI.js
-└── App.js  
+└── App.js
 ```
 
-**App.js**
-The first you need initialize global settings, add this into your app.js file
+**App.js** The first you need initialize global settings, add this into your app.js file
+
 ```javascript
 import RESTService from 'rest-redux-actions';
 
@@ -54,9 +55,10 @@ RESTService.init({
 ```
 
 > For save token you can use this static method
-```javascript
-RESTSerivece.saveToken('---token---'); 
-```
+>
+> ```javascript
+> RESTSerivece.saveToken('---token---');
+> ```
 
 **ProductsAPI.js**
 
@@ -67,7 +69,7 @@ const rest = new RESTService();
 
 export const getProducts = () => {  
   const uri = 'products';  
-  
+
   return rest.get(uri).then(response => response.json());  
 };
 ```
@@ -110,15 +112,15 @@ import { connect } from 'react-redux';
 import Products from '../pages/Products';  
 import { actions } from '../reducers/products-reducer';    
 import { bindComplexActionCreators } from 'rest-redux-actions';  
-  
+
 const mapStatToProps = (state) => {
   return { ...state.products }
 }; 
-  
+
 const mapDispatchToProps = (dispatch) => ({  
   ...bindComplexActionCreators(actions, dispatch),
 });  
-  
+
 export default connect(mapStatToProps, mapDispatchToProps)(Product);
 ```
 
@@ -131,14 +133,14 @@ export default Products extends PureComponent {
   componentDidMoint() {
     this.props.getProducts();
   }
-        
+
   render () {
     console.log(this.props.data)
     // log
     //{
-    //	status: 2 // 0 - error, 1 - pending, 2 - success
-    //	payload: [], // your data,
-    //	error: null // error text
+    //    status: 2 // 0 - error, 1 - pending, 2 - success
+    //    payload: [], // your data,
+    //    error: null // error text
     //}
     return (
         <div>
@@ -152,3 +154,4 @@ export default Products extends PureComponent {
 ## REST
 
 ## Redux Module
+
