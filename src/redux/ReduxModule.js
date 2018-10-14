@@ -176,7 +176,7 @@ export default class ReduxModule {
     const actionType = `${actionName}_${this.prefix}`;
 
     if (isFunction(alternativeRequest)) {
-      return alternativeRequest(dispatch, apiCallArguments);
+      return alternativeRequest(dispatch, apiCallArguments, actionType);
     }
 
     if (!apiCall) {
@@ -215,7 +215,7 @@ export default class ReduxModule {
           }
 
           if (isFunction(callBack)) {
-            callBack(response, dispatch)
+            callBack(response, dispatch);
           }
 
           return response;
