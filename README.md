@@ -1,4 +1,6 @@
-# README
+# Readme
+
+![](.gitbook/assets/logo.png)
 
 This tool is used to manage the application state. It makes the application state more predictable and more powerful.
 
