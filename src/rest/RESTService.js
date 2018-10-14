@@ -21,7 +21,6 @@ export default class RESTService {
   static token;
   static apiUrl;
   static baseUrl;
-  static applicationId;
   static settings = defaultSettings;
 
   static init = (settings: Object = {}): void => {
@@ -30,7 +29,24 @@ export default class RESTService {
     RESTService.baseUrl = settings.baseUrl || '';
   };
 
-  static saveToken = (token): void => {
+  static updateSettings = (settings: Object) => {
+    const { options, headers, ...otherSettings } = settings;
+
+    const {
+      options: defaultOptions,
+      headers: defaultHeaders,
+      ...defaultSettings
+    } = RESTService.settings;
+
+    RESTService.settings = {
+      ...defaultSettings,
+      ...otherSettings,
+      headers: { ...defaultHeaders, ...headers },
+      options: { ...defaultOptions, ...options },
+    };
+  };
+
+  static saveToken = (token: string): void => {
     RESTService.token = token;
   };
 
@@ -96,17 +112,13 @@ export default class RESTService {
   };
 
   getHeaders = (): Object => {
-    const { headers, tokenType, applicationId } = RESTService.settings;
+    const { headers, tokenType } = RESTService.settings;
 
     const requestHeaders = {
       ...defaultHeaders,
       ...headers,
       ...this.getToken(tokenType),
     };
-
-    if (applicationId) {
-      requestHeaders[applicationId] = RESTService.applicationId;
-    }
 
     return { headers: requestHeaders };
   };

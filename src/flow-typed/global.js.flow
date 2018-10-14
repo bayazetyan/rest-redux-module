@@ -11,6 +11,7 @@ declare type ActionProps = {
   idKey?: string,
   useMap?: boolean,
   apiCall?: () => void,
+  withoutResponse?: boolean,
   prepareData?: (data: Object) => Object,
   alternativeResponse?: (response: any) => any,
   alternativeRequest: (dispatch: Dispatch, apiCallArguments: Array) => any,
@@ -30,10 +31,11 @@ declare type ActionSettings = {
   key: ?string,
   idKey: ?string,
   actionName: ?string,
+  withoutResponse?: boolean,
 };
 
 declare type Result = {
+  payload: any,
   status: number,
-  error: ?string | ?Object,
-  payload: Object | Array
+  error: ?string | ?Object | ?Array,
 }

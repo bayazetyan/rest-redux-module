@@ -12,16 +12,12 @@ import {
   updateReducers,
 } from './reducers';
 
-const resultKey = 'data';
-const pendingResult = { status: 1, error: null };
-const successResult = { status: 2, error: null };
-
-const defaultResponseMap = {
-  successStatusValue: 'success',
-  message: 'message',
-  status: 'status',
-  data: 'data',
-};
+import {
+  RESULT_KEY,
+  PENDING_RESULT,
+  SUCCESS_RESULT,
+  DEFAULT_RESPONSE_MAP,
+} from '../constants';
 
 export default class ReduxModule {
   static globalSettings = {};
@@ -47,12 +43,53 @@ export default class ReduxModule {
     this.clearActions = [];
 
     this.defaultState = defaultState;
+
     this.responseMap = {
-      ...defaultResponseMap,
+      ...DEFAULT_RESPONSE_MAP,
       ...ReduxModule.globalSettings.responseMap,
       ...responseMap,
     };
   }
+
+  _createActionFullName = (actionName: string): string => {
+    const pendingAction = `${actionName}_PENDING`;
+    const errorAction = `${actionName}_ERROR`;
+    const successAction = `${actionName}_SUCCESS`;
+
+    return `${successAction}|${pendingAction}|${errorAction}`;
+  };
+
+  _createAction = (props: ActionProps, type: string): Function => {
+    const {
+      key,
+      name,
+      idKey,
+      apiCall,
+      withoutStatus,
+      returnResponse,
+      withoutResponse,
+    } = props;
+
+    this[`${key}withoutStatus`] = !apiCall || withoutStatus;
+
+    const actionName = name || type;
+
+    this.getActionGroup(type).push({
+      idKey,
+      actionName,
+      withoutStatus,
+      returnResponse,
+      withoutResponse,
+      key: key || RESULT_KEY
+    });
+
+    return (dispatch, ...args) => {
+      const getArguments = Actions.CLEAR === type ? [this.defaultState[key]] : args;
+
+      const newArguments = [ dispatch, props, getArguments, actionName ];
+      return this.apiCallAction.apply(undefined, newArguments);
+    };
+  };
 
   getActionGroup = (type: string): Array => {
     switch (type) {
@@ -79,36 +116,43 @@ export default class ReduxModule {
     }
   };
 
-  _createAction = (props: ActionProps, type: string): Function => {
-    const {
-      key,
-      name,
-      idKey,
-      apiCall,
-      withoutStatus,
-      returnResponse,
-      withoutResponse,
-    } = props;
+  getReducers = () => {
+    return {
+      ...this.combineActions(this.getActions, Actions.GET),
+      ...this.combineActions(this.addActions, Actions.CREATE),
+      ...this.combineActions(this.clearActions, Actions.CLEAR),
+      ...this.combineActions(this.updateActions, Actions.UPDATE),
+      ...this.combineActions(this.deleteActions, Actions.DELETE),
+    }
+  };
 
-    this[`${key}withoutStatus`] = !apiCall || withoutStatus;
+  combineActions = (actionSettings: ActionSettings[], type: string) => {
+    const reducer = {};
 
-    const actionName = name || type;
+    actionSettings.forEach(settings => {
+      if (!settings.withoutResponse) {
+        const actionType = `${settings.actionName}_${this.prefix}`;
 
-    this.getActionGroup(type).push({
-      idKey,
-      actionName,
-      withoutStatus,
-      returnResponse,
-      withoutResponse,
-      key: key || resultKey
+        reducer[this._createActionFullName(actionType)] = (state, action) => {
+
+          if (type === Actions.GET) {
+            return getReducers(state, action, settings)
+          } else if (type === Actions.CREATE) {
+            return addReducers(state, action, settings);
+          } else if (type === Actions.UPDATE) {
+            return updateReducers(state, action, settings);
+          } else if (type === Actions.DELETE) {
+            return deleteReducers(state, action, settings);
+          } else if (type === Actions.CLEAR) {
+            return clearReducers(state, action, settings);
+          } else {
+            return state
+          }
+        }
+      }
     });
 
-    return (dispatch, ...args) => {
-      const getArguments = Actions.CLEAR === type ? [this.defaultState[key]] : args;
-
-      const newArguments = [ dispatch, props, getArguments, actionName ];
-      return this.apiCallAction.apply(undefined, newArguments);
-    };
+    return reducer;
   };
 
   apiCallAction = (
@@ -127,7 +171,7 @@ export default class ReduxModule {
       alternativeResponse,
     } = props;
 
-    const { message, status, successStatusValue } = this.responseMap;
+    const { message, status, successStatusValue, errors } = this.responseMap;
 
     const actionType = `${actionName}_${this.prefix}`;
 
@@ -139,17 +183,17 @@ export default class ReduxModule {
       this.mainAction(dispatch, actionType, apiCallArguments, props)
     } else {
       if (!withoutStatus) {
-        dispatch({ type: `${actionType}_PENDING`, payload: pendingResult });
+        dispatch({ type: `${actionType}_PENDING`, payload: PENDING_RESULT });
       }
 
       return apiCall(...apiCallArguments)
         .then(response => {
-          if (response[status] !== void(0) && response[status] !== successStatusValue) {
+          if ((response[status] !== void(0) && response[status] !== successStatusValue) || response[errors]) {
             dispatch({
               type: `${actionType}_ERROR`,
               payload: {
                 status: 0,
-                error: response[message] || response.error
+                error: response[message] || response[errors] || response.error
               }
             });
           } else {
@@ -162,7 +206,7 @@ export default class ReduxModule {
 
             const payload = withoutStatus
               ? payloadData
-              : { ...successResult, payload: payloadData };
+              : { ...SUCCESS_RESULT, payload: payloadData };
 
             dispatch({
               payload,
@@ -180,7 +224,7 @@ export default class ReduxModule {
             type: `${actionType}_ERROR`,
             payload:  {
               status: 0,
-              error: response[message] || response.error,
+              error: response[message] || response[errors] || response.error,
             }
           });
 
@@ -204,52 +248,21 @@ export default class ReduxModule {
     });
   };
 
-  _createActionFullName = (actionName: string): string => {
-    const pendingAction = `${actionName}_PENDING`;
-    const errorAction = `${actionName}_ERROR`;
-    const successAction = `${actionName}_SUCCESS`;
+  // Actions
 
-    return `${successAction}|${pendingAction}|${errorAction}`;
-  };
+  createAction = (props: ActionProps): Function => this._createAction(props, Actions.GET);
 
-  combineActions = (actionSettings: ActionSettings[], type: string) => {
-    const reducer = {};
+  createAddAction = (props: ActionProps): Function => this._createAction(props, Actions.CREATE);
 
-    actionSettings.forEach(settings => {
-      if (!settings.withoutResponse) {
-        const actionType = `${settings.actionName}_${this.prefix}`;
-        reducer[this._createActionFullName(actionType)] = (state, action) => {
-          if (type === Actions.GET) {
-            return getReducers(state, action, settings)
-          } else if (type === Actions.CREATE) {
-            return addReducers(state, action, settings);
-          } else if (type === Actions.UPDATE) {
-            return updateReducers(state, action, settings);
-          } else if (type === Actions.DELETE) {
-            return deleteReducers(state, action, settings);
-          } else if (type === Actions.CLEAR) {
-            return clearReducers(state, action, settings);
-          } else {
-            return state
-          }
-        }
-      }
-    });
+  createUpdateAction = (props: ActionProps): Function => this._createAction(props, Actions.UPDATE);
 
-    return reducer;
-  };
+  createDeleteAction = (props: ActionProps): Function => this._createAction(props, Actions.DELETE);
 
-  dataReducer = () => {
-    return {
-      ...this.combineActions(this.getActions, Actions.GET),
-      ...this.combineActions(this.addActions, Actions.CREATE),
-      ...this.combineActions(this.clearActions, Actions.CLEAR),
-      ...this.combineActions(this.updateActions, Actions.UPDATE),
-      ...this.combineActions(this.deleteActions, Actions.DELETE),
-    }
-  };
+  createClearAction = (props: ActionProps): Function => this._createAction(props, Actions.CLEAR);
 
-  generateDefaultState = () => {
+  // Create reducer
+
+  createDefaultState = () => {
     const defaultState = {};
 
     if (this.defaultState) {
@@ -267,17 +280,10 @@ export default class ReduxModule {
     return defaultState;
   };
 
-  createAction = (props: ActionProps): Function => this._createAction(props, Actions.GET);
+  createReducer = (): Function => {
+    const reducers = this.getReducers();
+    const defaultState = this.createDefaultState();
 
-  createAddAction = (props: ActionProps): Function => this._createAction(props, Actions.CREATE);
-
-  createUpdateAction = (props: ActionProps): Function => this._createAction(props, Actions.UPDATE);
-
-  createDeleteAction = (props: ActionProps): Function => this._createAction(props, Actions.DELETE);
-
-  createClearAction = (props: ActionProps): Function => this._createAction(props, Actions.CLEAR);
-
-  createReducer = () => {
-    return handleActions(this.dataReducer(), this.generateDefaultState());
+    return handleActions(reducers, defaultState);
   };
 }
