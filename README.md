@@ -41,7 +41,7 @@ For example you can use this files structure
 **App.js** The first you need initialize global settings, add this into your app.js file
 
 ```javascript
-import RESTService from 'rest-redux-module';
+import RESTService from 'rest-redux-actions';
 
 RESTService.init({  
   headers: {}, // Your App headers here default {'Accept': 'application/json', 'Content-Type': 'application/json'}
@@ -63,7 +63,7 @@ RESTService.init({
 **ProductsAPI.js**
 
 ```javascript
-import RESTService from 'rest-redux-module';
+import RESTService from 'rest-redux-actions';
 
 const rest = new RESTService();
 
@@ -77,7 +77,7 @@ export const getProducts = () => {
 **products-reducer.js**
 
 ```javascript
-import { ReduxModule } from 'rest-redux-module';
+import { ReduxModule } from 'rest-redux-actions';
 import { getProducts } from '../services/api/ProductsAPI';
 
 const settings = {  
@@ -111,7 +111,7 @@ export default productModule.createReducer();
 import { connect } from 'react-redux';  
 import Products from '../pages/Products';  
 import { actions } from '../reducers/products-reducer';    
-import { bindComplexActionCreators } from 'rest-redux-module';  
+import { bindComplexActionCreators } from 'rest-redux-actions';  
 
 const mapStatToProps = (state) => {
   return { ...state.products }
