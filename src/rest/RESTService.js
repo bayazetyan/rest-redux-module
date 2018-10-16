@@ -60,17 +60,20 @@ export default class RESTService {
     let didTimeOut = false;
     let body = null;
 
+    const requestOptions = this.mergeOptions(method, body, options);
+
     if (data) {
-      if (method === GET || RESTService.settings.headers['Content-Type'] === 'application/x-www-form-urlencoded') {
+      if (method === GET || requestOptions.headers['Content-Type'] === 'application/x-www-form-urlencoded') {
         const urlWithParams = this.urlWithParams(data);
 
         requestUrl += `?${urlWithParams}`;
-      } else if (RESTService.settings.headers['Content-Type'] === 'application/json') {
+      } else if (requestOptions.headers['Content-Type'] === 'application/json') {
         body = JSON.stringify(data);
       }
     }
 
-    const requestOptions = this.mergeOptions(method, body, options);
+    if (body)
+      requestOptions.body = body;
 
     return new Promise(function(resolve, reject) {
       const timeout = setTimeout(() => {
@@ -124,7 +127,7 @@ export default class RESTService {
   };
 
   getToken = (tokenType: string): {[key: string]: string} | Object => {
-    return tokenType ? {
+    return !!RESTService.token ? {
       [tokenType]: RESTService.token
     } : {};
   };
@@ -148,19 +151,12 @@ export default class RESTService {
     return data.join('&');
   };
 
-  mergeOptions = (method: string, body: ?string | ?Object, opt: ?Object = {}): Object => {
-    const options = {
-      method,
-      ...RESTService.settings.options,
-      ...opt,
-      ...this.getHeaders(),
-    };
-
-    if (body)
-      options.body = body;
-
-    return options;
-  };
+  mergeOptions = (method: string, opt: ?Object = {}): Object => ({
+    method,
+    ...RESTService.settings.options,
+    ...opt,
+    ...this.getHeaders(),
+  });
 
   get = (
     path: string,
