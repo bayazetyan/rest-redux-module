@@ -44,12 +44,16 @@ export default class ReduxModule {
 
     this.defaultState = defaultState;
 
-    this.responseMap = {
+    this.responseMap = responseMap;
+  }
+
+  _getResponseMap = () => {
+    return {
       ...DEFAULT_RESPONSE_MAP,
       ...ReduxModule.globalSettings.responseMap,
-      ...responseMap,
-    };
-  }
+      ...this.responseMap,
+    }
+  };
 
   _createActionFullName = (actionName: string): string => {
     const pendingAction = `${actionName}_PENDING`;
@@ -61,18 +65,18 @@ export default class ReduxModule {
 
   _createAction = (props: ActionProps, type: string): Function => {
     const {
-      key,
+      key = RESULT_KEY,
       name,
       idKey,
       apiCall,
-      withoutStatus,
-      returnResponse,
-      withoutResponse,
+      withoutStatus = false,
+      returnResponse = false,
+      withoutResponse = false,
     } = props;
 
-    this[`${key}withoutStatus`] = !apiCall || withoutStatus;
-
     const actionName = name || type;
+
+    this[`${key}withoutStatus`] = !apiCall || withoutStatus || withoutResponse;
 
     this.getActionGroup(type).push({
       idKey,
@@ -80,7 +84,7 @@ export default class ReduxModule {
       withoutStatus,
       returnResponse,
       withoutResponse,
-      key: key || RESULT_KEY
+      key: key
     });
 
     return (dispatch, ...args) => {
@@ -107,7 +111,7 @@ export default class ReduxModule {
   };
 
   getResponseData = (response: any, returnResponse: boolean): any => {
-    const { data } = this.responseMap;
+    const { data } = this._getResponseMap();
 
     try {
       return returnResponse ? response : response[data];
@@ -171,7 +175,7 @@ export default class ReduxModule {
       alternativeResponse,
     } = props;
 
-    const { message, status, successStatusValue, errors } = this.responseMap;
+    const { message, status, successStatusValue, errors } = this._getResponseMap();
 
     const actionType = `${actionName}_${this.prefix}`;
 

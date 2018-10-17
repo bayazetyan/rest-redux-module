@@ -9,11 +9,11 @@ import { isObject } from './utils/misk';
 const createConfigs = (configs: Object) => {
   const { restConfigs, reduxConfigs } = configs;
 
+  if (reduxConfigs && isObject(reduxConfigs))
+    ReduxModule.init(reduxConfigs);
+
   if (restConfigs && isObject(restConfigs))
     RESTService.init(restConfigs);
-
-  if (reduxConfigs && isObject(reduxConfigs))
-    ReduxModule.init(reduxConfigs)
 };
 
 export {
