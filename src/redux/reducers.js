@@ -83,11 +83,29 @@ export const addReducers = (
       }
     }
   } else if (isObject(state[key].payload)) {
-    return {
-      ...state,
-      [key]: {
-        ...state[key],
-        ...action.payload,
+    const { payload, ...stateData } = state[key];
+
+    if (idKey) {
+      return {
+        ...state,
+        [key]: {
+          ...stateData,
+          payload: {
+            ...payload,
+            [action.payload[idKey]]: action.payload,
+          },
+        }
+      }
+    } else {
+      return {
+        ...state,
+        [key]: {
+          ...stateData,
+          payload: {
+            ...payload,
+            ...action.payload,
+          },
+        }
       }
     }
   }
@@ -155,18 +173,46 @@ export const updateReducers = (
       }
     }
   } else if (isObject(state[key].payload)) {
-    return {
-      ...state,
-      [key]: {
-        ...state[key],
-        ...action.payload,
+    const { payload, ...stateData } = state[key];
+
+    if (idKey) {
+      return {
+        ...state,
+        [key]: {
+          ...stateData,
+          payload: {
+            ...payload,
+            [action.payload[idKey]]: action.payload,
+          }
+        }
+      }
+    } else {
+      return {
+        ...state,
+        [key]: {
+          ...stateData,
+          payload: {
+            ...payload,
+            ...action.payload,
+          }
+        }
       }
     }
   }
 
-  return {
-    ...state,
-    [key]: action.payload
+  if (idKey) {
+    return {
+      ...state,
+      [key]: {
+        ...state[key],
+        [action.payload[idKey]]: action.payload,
+      }
+    }
+  } else {
+    return {
+      ...state,
+      [key]: action.payload
+    }
   }
 };
 

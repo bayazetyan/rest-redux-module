@@ -65,7 +65,7 @@ export default class ReduxModule {
 
   _createAction = (props: ActionProps, type: string): Function => {
     const {
-      key = RESULT_KEY,
+      key,
       name,
       idKey,
       apiCall,
@@ -76,7 +76,10 @@ export default class ReduxModule {
 
     const actionName = name || type;
 
-    this[`${key}withoutStatus`] = !apiCall || withoutStatus || withoutResponse;
+    if (key && !this[`has_${key}`]) {
+      this[`has_${key}`] = true;
+      this[`${key}withoutStatus`] = !apiCall || withoutStatus || withoutResponse;
+    }
 
     this.getActionGroup(type).push({
       idKey,
@@ -84,7 +87,7 @@ export default class ReduxModule {
       withoutStatus,
       returnResponse,
       withoutResponse,
-      key: key
+      key: key || RESULT_KEY,
     });
 
     return (dispatch, ...args) => {

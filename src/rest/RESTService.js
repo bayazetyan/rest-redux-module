@@ -27,6 +27,7 @@ export default class RESTService {
     RESTService.settings = { ...RESTService.settings, ...settings };
     RESTService.apiUrl = settings.apiUrl || '';
     RESTService.baseUrl = settings.baseUrl || '';
+    RESTService.devUrl = settings.devUrl || '';
   };
 
   static updateSettings = (settings: Object) => {
@@ -53,14 +54,17 @@ export default class RESTService {
   _fetch = (
     path: string,
     method: string = GET,
-    data: ?Object = null,
-    options: ?Object = null
+    data: ?Object,
+    opt: ?Object
   ): Promise => {
-    let requestUrl = `${RESTService.baseUrl}${RESTService.apiUrl}${path}`;
+    const { useDev = false, ...options } = opt;
+    const host = useDev ? RESTService.devUrl : RESTService.baseUrl;
+
+    let requestUrl = `${host}${RESTService.apiUrl}${path}`;
     let didTimeOut = false;
     let body = null;
 
-    const requestOptions = this.mergeOptions(method, body, options);
+    const requestOptions = this.mergeOptions(method, options);
 
     if (data) {
       if (method === GET || requestOptions.headers['Content-Type'] === 'application/x-www-form-urlencoded') {
@@ -114,12 +118,13 @@ export default class RESTService {
     });
   };
 
-  getHeaders = (): Object => {
+  getHeaders = (customHeaders: ?Object = {}): Object => {
     const { headers, tokenType } = RESTService.settings;
 
     const requestHeaders = {
       ...defaultHeaders,
       ...headers,
+      ...customHeaders,
       ...this.getToken(tokenType),
     };
 
@@ -151,34 +156,46 @@ export default class RESTService {
     return data.join('&');
   };
 
-  mergeOptions = (method: string, opt: ?Object = {}): Object => ({
-    method,
-    ...RESTService.settings.options,
-    ...opt,
-    ...this.getHeaders(),
-  });
+  mergeOptions = (method: string, opt: ?Object): Object => {
+    if (opt !== null) {
+      const { headers, ...options } = opt;
+
+      return {
+        method,
+        ...RESTService.settings.options,
+        ...this.getHeaders(headers),
+        ...options,
+      }
+    } else {
+      return {
+        method,
+        ...RESTService.settings.options,
+        ...this.getHeaders(),
+      }
+    }
+  };
 
   get = (
     path: string,
     data: ?Object = null,
-    options: ?Object = null
+    options: ?Object = {}
   ) => this._fetch(path, GET, data, options);
 
   post = (
     path: string,
     data: ?Object,
-    options: ?Object = null
+    options: ?Object = {}
   ) => this._fetch(path, POST, data, options);
 
   put = (
     path: string,
     data: ?Object,
-    options: ?Object = null
+    options: ?Object = {}
   ) => this._fetch(path, PUT, data, options);
 
   delete = (
     path: string,
     data: ?Object,
-    options: ?Object = null
+    options: ?Object = {}
   ) => this._fetch(path, DELETE, data, options);
 }
