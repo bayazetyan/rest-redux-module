@@ -3,6 +3,7 @@
 import * as Actions from './actionTypes'
 import { handleActions } from './handleActions';
 import { isFunction } from '../utils/misk';
+import { generateException } from '../utils/exception';
 
 import {
   getReducers,
@@ -32,6 +33,12 @@ export default class ReduxModule {
       defaultState,
       responseMap = {},
     } = props;
+
+    if (!prefix) {
+      const message = 'The "prefix" value is required';
+
+      generateException(message)
+    }
 
     this.prefix = prefix;
 
@@ -63,7 +70,7 @@ export default class ReduxModule {
     return `${successAction}|${pendingAction}|${errorAction}`;
   };
 
-  _createAction = (props: ActionProps, type: string): Function => {
+  _createAction = (props: ActionProps = {}, type: string): Function => {
     const {
       key,
       name,
@@ -94,6 +101,7 @@ export default class ReduxModule {
       const getArguments = Actions.CLEAR === type ? [this.defaultState[key]] : args;
 
       const newArguments = [ dispatch, props, getArguments, actionName ];
+
       return this.apiCallAction.apply(undefined, newArguments);
     };
   };
@@ -187,7 +195,7 @@ export default class ReduxModule {
     }
 
     if (!apiCall) {
-      this.mainAction(dispatch, actionType, apiCallArguments, props)
+      return this.mainAction(dispatch, actionType, apiCallArguments, props)
     } else {
       if (!withoutStatus) {
         dispatch({ type: `${actionType}_PENDING`, payload: PENDING_RESULT });
