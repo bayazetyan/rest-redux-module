@@ -1,3 +1,5 @@
+// @flow
+
 import RESTService from './rest/RESTService';
 
 import ReduxModule from './redux/ReduxModule';

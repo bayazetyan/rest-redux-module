@@ -85,24 +85,30 @@ export default class RESTService {
         reject(new Error(RESTService.settings.timeoutMessage));
       }, RESTService.settings.fetchTimeout);
 
-      if ((typeof __REMOTEDEV__ !== 'undefined' || process.env.NODE_ENV === 'development')
-        && RESTService.settings.logger)
-      {
-        console.group(`${requestUrl} - ${method}`);
-        console.log(
-          '%c Request Headers: \t',
-          'color: #FC4044; font-size: 11px; font-weight: bold;',
-          requestOptions.headers
-        );
-
-        if (data)
+      try {
+        if ((typeof __REMOTEDEV__ !== 'undefined' || process.env.NODE_ENV === 'development')
+          && RESTService.settings.logger)
+        {
+          console.group(`${requestUrl} - ${method}`);
           console.log(
-            '%c Request Body: \t',
-            'color: #00cc4b; font-size: 11px; font-weight: bold;',
-            data
+            '%c Request Headers: \t',
+            'color: #FC4044; font-size: 11px; font-weight: bold;',
+            requestOptions.headers
           );
 
-        console.groupEnd();
+          if (data) {
+            console.log(
+              '%c Request Body: \t',
+              'color: #00cc4b; font-size: 11px; font-weight: bold;',
+              data
+            );
+          }
+
+          console.groupEnd();
+        }
+
+      } catch (e) {
+        console.log(e);
       }
 
       fetch(requestUrl, requestOptions)
