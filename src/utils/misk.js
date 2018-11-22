@@ -20,5 +20,5 @@ export const isMap = (data: any): boolean => {
 export const deleteForbiddenSymbols = (value: string) => {
   const regExp = new RegExp(/[&@=+$,;?/]/, 'g');
 
-  return value.replace(regExp, '')
+  return value ? String(value).replace(regExp, '') : '';
 };

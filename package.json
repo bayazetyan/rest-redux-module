@@ -1,6 +1,6 @@
 {
   "name": "rest-redux-module",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "main": "./dist/index.js",
   "scripts": {
     "prepublishOnly": "yarn run build",
