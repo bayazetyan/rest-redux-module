@@ -1,4 +1,5 @@
 // @flow
+import { deleteForbiddenSymbols } from '../utils/misk';
 
 const GET = 'GET';
 const PUT = 'PUT';
@@ -147,17 +148,17 @@ export default class RESTService {
     let url = '';
 
     Object.keys(data).forEach(key => {
-      if (Array.isArray(key))
-        url += `${this.parseArray(key, data[key])}&`;
+      if (Array.isArray(data[key]))
+        url += `${this.parseArray(data[key], key)}&`;
       else
-        url += `${key}=${data[key]}&`;
+        url += `${key}=${deleteForbiddenSymbols(data[key])}&`;
     });
 
     return url.substring(0, url.length - 1);
   };
 
   parseArray = (values: string[], paramName: string): string => {
-    const data = values.map(value => `${paramName}[]=${value}`);
+    const data = values.map(value => `${paramName}[]=${deleteForbiddenSymbols(value)}`);
 
     return data.join('&');
   };

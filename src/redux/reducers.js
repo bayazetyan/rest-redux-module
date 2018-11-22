@@ -7,33 +7,25 @@ export const getReducers = (
   action: Action,
   settings: ActionSettings
 ): Object => {
-  const { idKey, key, useMap = false, withoutStatus }  = settings;
+  const { idKey, key, useMap = false, withoutStatus = false }  = settings;
   const data = idKey ? createMap(action.payload, idKey, useMap) : action.payload;
 
   if (!data) {
     return state
   }
 
-  if (!isArray(action.payload) && !isObject(action.payload)) {
-    return {
-      ...state,
-      [key]: data
-    }
-  } else if (isArray(action.payload) && withoutStatus) {
-    return {
-      ...state,
-      [key]: [
-        ...state[key],
-        ...data
-      ]
-    }
-  } else {
+  if (isObject(action.payload) && !withoutStatus) {
     return {
       ...state,
       [key]: {
         ...state[key],
         ...data
       }
+    }
+  } else {
+    return {
+      ...state,
+      [key]: data
     }
   }
 };

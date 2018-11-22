@@ -91,9 +91,15 @@ export default class ReduxModule {
     });
 
     return (dispatch, ...args) => {
-      const getArguments = Actions.CLEAR === type ? [this.defaultState[key]] : args;
+      let getArguments = args;
 
-      const newArguments = [ dispatch, props, getArguments, actionName ];
+      if (Actions.CLEAR === type) {
+        getArguments = this[`${key}withoutStatus`]
+          ? [this.defaultState[key]]
+          : [ {...SUCCESS_RESULT, payload: this.defaultState[key]} ];
+      }
+
+      const newArguments = [ dispatch, props, getArguments, actionName, type ];
       return this.apiCallAction.apply(undefined, newArguments);
     };
   };
@@ -166,14 +172,15 @@ export default class ReduxModule {
     dispatch: Dispatch,
     props: ActionProps,
     apiCallArguments: any[],
-    actionName: string
+    actionName: string,
+    type: string,
   ): Action | Promise<Action> => {
     const {
       apiCall,
-      callBack,
+      callback,
       withoutStatus,
       returnResponse,
-      localUpdate,
+      localeUpdate,
       alternativeRequest,
       alternativeResponse,
     } = props;
@@ -209,9 +216,11 @@ export default class ReduxModule {
               ? alternativeResponse(response)
               : this.getResponseData(response, returnResponse);
 
-            const payloadData = localUpdate ? apiCallArguments[0] : responseData;
+            const payloadData = localeUpdate || type === Actions.DELETE
+              ? apiCallArguments[0]
+              : responseData;
 
-            const payload = withoutStatus
+            const payload = withoutStatus || (localeUpdate || type === Actions.DELETE)
               ? payloadData
               : { ...SUCCESS_RESULT, payload: payloadData };
 
@@ -221,8 +230,8 @@ export default class ReduxModule {
             });
           }
 
-          if (isFunction(callBack)) {
-            callBack(response, dispatch);
+          if (isFunction(callback)) {
+            callback(response, dispatch);
           }
 
           return response;
@@ -246,8 +255,12 @@ export default class ReduxModule {
     actionArguments: Array,
     props: ActionProps
   ): Action => {
-    const { prepareData } = props;
+    const { prepareData, callback } = props;
     const data = !!prepareData ? prepareData(actionArguments[0]) : actionArguments[0];
+
+    if (isFunction(callback)) {
+      setTimeout(() => callback(data, dispatch));
+    }
 
     return dispatch({
       type: `${actionType}_SUCCESS`,

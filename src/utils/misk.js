@@ -16,3 +16,9 @@ export const isArray = (maybeArray: any): boolean => {
 export const isMap = (data: any): boolean => {
   return data instanceof Map
 };
+
+export const deleteForbiddenSymbols = (value: string) => {
+  const regExp = new RegExp(/[&@=+$,;?/]/, 'g');
+
+  return value.replace(regExp, '')
+};
