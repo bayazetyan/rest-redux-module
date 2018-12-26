@@ -1,6 +1,6 @@
 {
   "name": "rest-redux-module",
-  "version": "1.1.7",
+  "version": "1.1.9",
   "main": "./dist/index.js",
   "scripts": {
     "prepublishOnly": "yarn run build",
@@ -9,7 +9,7 @@
   "files": [
     "dist"
   ],
-  "repository": "https://bayazetyan@github.com/bayazetyan/rest-redux-actions.git",
+  "repository": "https://bayazetyan@github.com/bayazetyan/rest-redux-module.git",
   "author": "Artashes Bayazetyan <bayazetyan@gmail.com>",
   "license": "MIT",
   "devDependencies": {

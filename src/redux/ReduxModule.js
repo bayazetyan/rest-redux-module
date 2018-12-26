@@ -69,12 +69,14 @@ export default class ReduxModule {
       name,
       idKey,
       apiCall,
+      innerPath = '',
       withoutStatus = false,
       returnResponse = false,
       withoutResponse = false,
     } = props;
 
     const actionName = name || type;
+    const keyValue = key || RESULT_KEY;
 
     if (key && !this[`has_${key}`]) {
       this[`has_${key}`] = true;
@@ -83,20 +85,22 @@ export default class ReduxModule {
 
     this.getActionGroup(type).push({
       idKey,
+      apiCall,
+      innerPath,
       actionName,
       withoutStatus,
       returnResponse,
       withoutResponse,
-      key: key || RESULT_KEY,
+      key: keyValue,
     });
 
     return (dispatch, ...args) => {
       let getArguments = args;
 
       if (Actions.CLEAR === type) {
-        getArguments = this[`${key}withoutStatus`]
-          ? [this.defaultState[key]]
-          : [ {...SUCCESS_RESULT, payload: this.defaultState[key]} ];
+        getArguments = this[`${keyValue}withoutStatus`]
+          ? [this.defaultState[keyValue]]
+          : [ {...SUCCESS_RESULT, payload: this.defaultState[keyValue]} ];
       }
 
       const newArguments = [ dispatch, props, getArguments, actionName, type ];
@@ -175,12 +179,14 @@ export default class ReduxModule {
     actionName: string,
     type: string,
   ): Action | Promise<Action> => {
+    const localUpdateValue = type === Actions.DELETE || type === Actions.UPDATE || type === Actions.CREATE;
+
     const {
       apiCall,
       callback,
       withoutStatus,
       returnResponse,
-      localeUpdate,
+      localeUpdate = localUpdateValue,
       alternativeRequest,
       alternativeResponse,
     } = props;
@@ -202,7 +208,11 @@ export default class ReduxModule {
 
       return apiCall(...apiCallArguments)
         .then(response => {
-          if ((response[status] !== void(0) && response[status] !== successStatusValue) || response[errors]) {
+          if (
+            (response[status] !== void(0) && response[status] !== successStatusValue)
+            || response[errors]
+            || response.status >= 400
+          ) {
             dispatch({
               type: `${actionType}_ERROR`,
               payload: {
@@ -216,11 +226,11 @@ export default class ReduxModule {
               ? alternativeResponse(response)
               : this.getResponseData(response, returnResponse);
 
-            const payloadData = localeUpdate || type === Actions.DELETE
+            const payloadData = localeUpdate
               ? apiCallArguments[0]
               : responseData;
 
-            const payload = withoutStatus || (localeUpdate || type === Actions.DELETE)
+            const payload = withoutStatus
               ? payloadData
               : { ...SUCCESS_RESULT, payload: payloadData };
 

@@ -30,6 +30,8 @@ declare type ModuleProps = {
 declare type ActionSettings = {
   key: ?string,
   idKey: ?string,
+  useMap?: boolean,
+  innerPath?: string,
   actionName: ?string,
   withoutResponse?: boolean,
 };

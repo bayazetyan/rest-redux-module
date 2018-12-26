@@ -1,14 +1,22 @@
 // @flow
 import { createMap, cloneMap } from '../utils/map';
-import { isMap, isArray, isObject } from '../utils/misk';
+import { isMap, isArray, isObject, mapObject, getActionPayload } from '../utils/misk';
 
 export const getReducers = (
   state: Object,
   action: Action,
   settings: ActionSettings
 ): Object => {
-  const { idKey, key, useMap = false, withoutStatus = false }  = settings;
-  const data = idKey ? createMap(action.payload, idKey, useMap) : action.payload;
+  const {
+    key,
+    idKey,
+    apiCall,
+    useMap = false,
+    withoutStatus = false,
+  }  = settings;
+
+  const actionData = getActionPayload(action);
+  const data = idKey ? createMap(actionData, idKey, useMap) : actionData;
 
   if (!data) {
     return state
@@ -35,6 +43,7 @@ export const addReducers = (
   action: Action,
   settings: ActionSettings
 ): Object => {
+  const actionData = getActionPayload(action);
   const { idKey, key } = settings;
   const item = action.payload.payload || action.payload;
 
@@ -67,18 +76,19 @@ export const addReducers = (
       ...state,
       [key]: [
         ...state[key],
-        action.payload
+        actionData
       ]
     }
   } else if (state[key].payload && isArray(state[key].payload)) {
+    const { payload, ...stateData } = actionData;
     return {
       ...state,
       [key]: {
         ...state[key],
-        ...action.payload,
+        ...stateData,
         payload: [
           ...state[key].payload,
-          action.payload.payload
+          payload
         ]
       }
     }
@@ -92,7 +102,7 @@ export const addReducers = (
           ...stateData,
           payload: {
             ...payload,
-            [action.payload[idKey]]: action.payload,
+            [actionData[idKey]]: actionData,
           },
         }
       }
@@ -103,7 +113,7 @@ export const addReducers = (
           ...stateData,
           payload: {
             ...payload,
-            ...action.payload,
+            ...actionData,
           },
         }
       }
@@ -112,7 +122,7 @@ export const addReducers = (
 
   return {
     ...state,
-    [key]: action.payload
+    [key]: actionData
   }
 };
 
@@ -122,9 +132,10 @@ export const updateReducers = (
   settings: ActionSettings
 ): Object => {
   const { idKey, key } = settings;
-  const item = action.payload.payload || action.payload;
+
 
   if (isMap(state[key])) {
+    const item = action.payload;
     const data = state[key].payload;
     const cloneData = cloneMap(data);
 
@@ -135,6 +146,7 @@ export const updateReducers = (
       [key]: cloneData
     }
   } else if (isMap(state[key].payload)) {
+    const item = action.payload.payload;
     const data = state[key].payload;
     const cloneData = cloneMap(data);
 
@@ -160,9 +172,12 @@ export const updateReducers = (
     }
   } else if (state[key].payload && isArray(state[key].payload)) {
     const cloneData = [ ...state[key].payload ];
-    const updatedElementIndex = cloneData.findIndex(item => item[idKey] === action.payload.payload[idKey]);
 
-    cloneData[updatedElementIndex] = action.payload.payload;
+    if (action.payload.payload) {
+      const updatedElementIndex = cloneData.findIndex(item => item[idKey] === action.payload.payload[idKey]);
+
+      cloneData[updatedElementIndex] = action.payload.payload;
+    }
 
     return {
       ...state,
@@ -187,14 +202,12 @@ export const updateReducers = (
         }
       }
     } else {
+
       return {
         ...state,
         [key]: {
-          ...stateData,
-          payload: {
-            ...payload,
-            ...action.payload,
-          }
+          ...state[key],
+          ...action.payload,
         }
       }
     }
@@ -222,9 +235,9 @@ export const deleteReducers = (
   settings: ActionSettings
 ): Object => {
   const { idKey, key } = settings;
-  const itemId = action.payload;
 
   if (isMap(state[key])) {
+    const itemId = action.payload;
     const data = state[key];
     const cloneData = cloneMap(data);
 
@@ -235,6 +248,7 @@ export const deleteReducers = (
       [key]: cloneData
     }
   } else if (isMap(state[key].payload)) {
+    const itemId = action.payload.payload;
     const data = state[key].payload;
     const cloneData = cloneMap(data);
 
@@ -248,6 +262,7 @@ export const deleteReducers = (
       }
     }
   } else if (isArray(state[key])) {
+    const itemId = action.payload;
     const cloneData = [ ...state[key] ];
     const updatedData = cloneData.filter(item => item[idKey] !== itemId);
 
@@ -256,6 +271,8 @@ export const deleteReducers = (
       [key]: updatedData
     }
   } else if (state[key].payload && isArray(state[key].payload)) {
+    const itemId = action.payload.payload;
+
     const cloneData = [ ...state[key].payload ];
     const updatedData = cloneData.filter(item => item[idKey] !== itemId);
 
@@ -263,7 +280,8 @@ export const deleteReducers = (
       ...state,
       [key]: {
         ...state[key],
-        payload: updatedData
+        ...action.payload,
+        payload: updatedData,
       }
     }
   }
