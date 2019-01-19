@@ -18,7 +18,7 @@ export const isMap = (data: any): boolean => {
 };
 
 export const deleteForbiddenSymbols = (value: string) => {
-  const regExp = new RegExp('[&=?[\]/]', 'g');
+  const regExp = new RegExp(/[&=?[\]/]/g);
 
   return value ? String(value).replace(regExp, '') : '';
 };
@@ -29,4 +29,10 @@ export const mapObject = (data: Object, path: string): any => {
 
 export const getActionPayload = (action: Action) => {
   return action.payload;
+};
+
+export const getActionStatusData = (action: Action) => {
+  const { paylaod, ...actionStatusData } = action.payload;
+
+  return actionStatusData;
 };

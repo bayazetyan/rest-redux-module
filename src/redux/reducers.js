@@ -1,6 +1,6 @@
 // @flow
 import { createMap, cloneMap } from '../utils/map';
-import { isMap, isArray, isObject, mapObject, getActionPayload } from '../utils/misk';
+import { isMap, isArray, isObject, getActionStatusData, getActionPayload } from '../utils/misk';
 
 export const getReducers = (
   state: Object,
@@ -133,7 +133,6 @@ export const updateReducers = (
 ): Object => {
   const { idKey, key } = settings;
 
-
   if (isMap(state[key])) {
     const item = action.payload;
     const data = state[key].payload;
@@ -164,7 +163,7 @@ export const updateReducers = (
     const cloneData = [ ...state[key] ];
     const updatedElementIndex = cloneData.findIndex(item => item[idKey] === action.payload[idKey]);
 
-    cloneData[updatedElementIndex] = action.payload;
+    cloneData[updatedElementIndex] = { ...cloneData[updatedElementIndex], ...action.payload };
 
     return {
       ...state,
@@ -195,19 +194,23 @@ export const updateReducers = (
         ...state,
         [key]: {
           ...stateData,
+          ...getActionStatusData(action),
           payload: {
             ...payload,
-            [action.payload[idKey]]: action.payload,
+            [action.payload[idKey]]: getActionPayload(action).payload,
           }
         }
       }
     } else {
-
       return {
         ...state,
         [key]: {
-          ...state[key],
-          ...action.payload,
+          ...stateData,
+          ...getActionStatusData(action),
+          payload: {
+            ...payload,
+            ...getActionPayload(action).payload,
+          }
         }
       }
     }
