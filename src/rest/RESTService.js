@@ -1,5 +1,5 @@
 // @flow
-import { deleteForbiddenSymbols } from '../utils/misk';
+import { deleteForbiddenSymbols } from '../utils/misc';
 
 const GET = 'GET';
 const PUT = 'PUT';

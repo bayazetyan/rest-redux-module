@@ -2,7 +2,7 @@
 
 import * as Actions from './actionTypes'
 import { handleActions } from './handleActions';
-import { isFunction } from '../utils/misk';
+import { isFunction } from '../utils/misc';
 
 import {
   getReducers,
@@ -33,7 +33,7 @@ export default class ReduxModule {
       responseMap = {},
     } = props;
 
-    this.prefix = prefix;
+    this.prefix = prefix ? `_${prefix}` : '';
 
     // Action groups
     this.getActions = [];
@@ -67,9 +67,8 @@ export default class ReduxModule {
     const {
       key,
       name,
-      idKey,
+      idKeys,
       apiCall,
-      innerPath = '',
       withoutStatus = false,
       returnResponse = false,
       withoutResponse = false,
@@ -82,16 +81,16 @@ export default class ReduxModule {
       this[`has_${key}`] = true;
       this[`${key}withoutStatus`] = !apiCall || withoutStatus || withoutResponse;
     }
-
+    console.log('LOG ::::::> this[`${key}withoutStatus`] <::::::',this[`${key}withoutStatus`])
     this.getActionGroup(type).push({
-      idKey,
+      idKeys,
       apiCall,
-      innerPath,
       actionName,
       withoutStatus,
+      key: keyValue,
       returnResponse,
       withoutResponse,
-      key: keyValue,
+      hasPayload: !this[`${key}withoutStatus`],
     });
 
     return (dispatch, ...args) => {
@@ -148,7 +147,7 @@ export default class ReduxModule {
 
     actionSettings.forEach(settings => {
       if (!settings.withoutResponse) {
-        const actionType = `${settings.actionName}_${this.prefix}`;
+        const actionType = `${settings.actionName}${this.prefix}`;
 
         reducer[this._createActionFullName(actionType)] = (state, action) => {
 
@@ -193,7 +192,7 @@ export default class ReduxModule {
 
     const { message, status, successStatusValue, errors } = this._getResponseMap();
 
-    const actionType = `${actionName}_${this.prefix}`;
+    const actionType = `${actionName}${this.prefix}`;
 
     if (isFunction(alternativeRequest)) {
       return alternativeRequest(dispatch, apiCallArguments, actionType);
@@ -208,6 +207,7 @@ export default class ReduxModule {
 
       return apiCall(...apiCallArguments)
         .then(response => {
+          console.log('LOG ::::::> response <::::::',response)
           if (
             (response[status] !== void(0) && response[status] !== successStatusValue)
             || response[errors]
@@ -233,7 +233,7 @@ export default class ReduxModule {
             const payload = withoutStatus
               ? payloadData
               : { ...SUCCESS_RESULT, payload: payloadData };
-
+            console.log('LOG ::::::> payload <::::::',payload)
             dispatch({
               payload,
               type: `${actionType}_SUCCESS`,

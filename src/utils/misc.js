@@ -13,8 +13,8 @@ export const isArray = (maybeArray: any): boolean => {
   return Array.isArray(maybeArray);
 };
 
-export const isMap = (data: any): boolean => {
-  return data instanceof Map
+export const isMap = (data: Object): boolean => {
+  return data instanceof Map || data.payload;
 };
 
 export const deleteForbiddenSymbols = (value: string) => {
@@ -32,7 +32,37 @@ export const getActionPayload = (action: Action) => {
 };
 
 export const getActionStatusData = (action: Action) => {
-  const { paylaod, ...actionStatusData } = action.payload;
+  const actionData = getActionPayload(action);
+  const { payload, ...actionStatusData } = actionData;
 
-  return actionStatusData;
+  if (payload) {
+    return actionStatusData;
+  } else {
+    return { status: 2, error: null };
+  }
+};
+
+export const updateState = (options: Object): Object => {
+  const {
+    key,
+    state,
+    payload,
+    hasPayload,
+    actionStatus,
+  } = options;
+
+  if (hasPayload) {
+    return {
+      ...state,
+      [key]: {
+        ...actionStatus,
+        payload,
+      }
+    }
+  } else {
+    return {
+      ...state,
+      [key]: payload
+    }
+  }
 };

@@ -6,7 +6,7 @@ import ReduxModule from './redux/ReduxModule';
 import { bindComplexActionCreators } from './redux/bindComplexActionCreators';
 
 import { needToShowIndicator, combineStatuses } from './helpers';
-import { isObject } from './utils/misk';
+import { isObject } from './utils/misc';
 
 const createConfigs = (configs: Object) => {
   const { restConfigs, reduxConfigs } = configs;
@@ -20,10 +20,9 @@ const createConfigs = (configs: Object) => {
 
 export {
   ReduxModule,
+  RESTService,
   createConfigs,
   combineStatuses,
   needToShowIndicator,
   bindComplexActionCreators,
 };
-
-export default RESTService;

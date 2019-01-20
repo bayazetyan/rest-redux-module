@@ -1,28 +1,31 @@
 // @flow
-import { createMap, cloneMap } from '../utils/map';
-import { isMap, isArray, isObject, getActionStatusData, getActionPayload } from '../utils/misk';
 
-export const getReducers = (
-  state: Object,
-  action: Action,
-  settings: ActionSettings
-): Object => {
+import { createMap } from '../utils/map';
+
+import {
+  isArray,
+  isObject,
+  updateState,
+  getActionPayload,
+  getActionStatusData,
+} from '../utils/misc';
+
+export const getReducers = (state: Object, action: Action, settings: ActionSettings): Object => {
   const {
     key,
-    idKey,
-    apiCall,
-    useMap = false,
+    idKeys,
     withoutStatus = false,
-  }  = settings;
+  } = settings;
 
   const actionData = getActionPayload(action);
-  const data = idKey ? createMap(actionData, idKey, useMap) : actionData;
+  const hasPayload = !!state[key].payload;
+  const data = idKeys && idKeys.length ? createMap(actionData, idKeys, hasPayload) : actionData;
 
   if (!data) {
     return state
   }
 
-  if (isObject(action.payload) && !withoutStatus) {
+  if (isObject(actionData) && !withoutStatus) {
     return {
       ...state,
       [key]: {
@@ -38,269 +41,172 @@ export const getReducers = (
   }
 };
 
-export const addReducers = (
-  state: Object,
-  action: Action,
-  settings: ActionSettings
-): Object => {
+export const addReducers = (state: Object, action: Action, settings: ActionSettings): Object => {
+  const { idKeys, key, hasPayload } = settings;
+
   const actionData = getActionPayload(action);
-  const { idKey, key } = settings;
-  const item = action.payload.payload || action.payload;
+  const stateData = state[key].payload || state[key];
+  const actionStatus = getActionStatusData(action, hasPayload);
 
-  if (isMap(state[key])) {
-    const data = state[key];
-    const cloneData = cloneMap(data);
+  const updatedData = {
+    key,
+    state,
+    hasPayload,
+    actionStatus,
+    payload: actionData
+  };
 
-    cloneData.set(item[idKey], item);
+  if (isObject(stateData)) {
+    let cloneData = { ...stateData };
 
-    return {
-      ...state,
-      [key]: cloneData
-    }
-  } else if (isMap(state[key].payload)) {
-    const data = state[key].payload;
-    const cloneData = cloneMap(data);
-
-    cloneData.set(item[idKey], item);
-
-    return {
-      ...state,
-      [key]: {
-        ...state[key],
-        ...action.payload,
-        payload: cloneData
-      }
-    }
-  } else if (isArray(state[key])) {
-    return {
-      ...state,
-      [key]: [
-        ...state[key],
-        actionData
-      ]
-    }
-  } else if (state[key].payload && isArray(state[key].payload)) {
-    const { payload, ...stateData } = actionData;
-    return {
-      ...state,
-      [key]: {
-        ...state[key],
-        ...stateData,
-        payload: [
-          ...state[key].payload,
-          payload
-        ]
-      }
-    }
-  } else if (isObject(state[key].payload)) {
-    const { payload, ...stateData } = state[key];
-
-    if (idKey) {
-      return {
-        ...state,
-        [key]: {
-          ...stateData,
-          payload: {
-            ...payload,
-            [actionData[idKey]]: actionData,
-          },
-        }
-      }
+    if (idKeys && idKeys.length) {
+      idKeys.reduce((prev, next) => {
+        cloneData[actionData[next]] = actionData
+      }, stateData);
     } else {
-      return {
-        ...state,
-        [key]: {
-          ...stateData,
-          payload: {
-            ...payload,
-            ...actionData,
-          },
-        }
-      }
+      cloneData = { ...cloneData,  ...actionData}
     }
+
+    updatedData.payload = cloneData;
+
+    return updateState(updatedData);
+  } else if (isArray(stateData)) {
+    let cloneData = [...stateData ];
+    cloneData.push(actionData);
+
+    updatedData.payload = cloneData;
+
+    return updateState(updatedData);
   }
 
-  return {
-    ...state,
-    [key]: actionData
-  }
+  return updateState(updatedData);
 };
 
-export const updateReducers = (
-  state: Object,
-  action: Action,
-  settings: ActionSettings
-): Object => {
-  const { idKey, key } = settings;
+export const updateReducers = (state: Object, action: Action, settings: ActionSettings): Object => {
+  const { idKeys, key, hasPayload } = settings;
 
-  if (isMap(state[key])) {
-    const item = action.payload;
-    const data = state[key].payload;
-    const cloneData = cloneMap(data);
+  const actionData = getActionPayload(action);
+  const stateData = state[key].payload || state[key];
+  const actionStatus = getActionStatusData(action, hasPayload);
 
-    cloneData.set(item[idKey], item);
+  const updatedData = {
+    key,
+    state,
+    hasPayload,
+    actionStatus,
+    payload: actionData
+  };
 
-    return {
-      ...state,
-      [key]: cloneData
-    }
-  } else if (isMap(state[key].payload)) {
-    const item = action.payload.payload;
-    const data = state[key].payload;
-    const cloneData = cloneMap(data);
+  if (isObject(stateData)) {
+    let cloneData = { ...stateData };
 
-    cloneData.set(item[idKey], item);
+    if (idKeys && idKeys.length) {
+      let key = '';
 
-    return {
-      ...state,
-      [key]: {
-        ...state[key],
-        ...action.payload,
-        payload: cloneData
-      }
-    }
-  } else if (isArray(state[key])) {
-    const cloneData = [ ...state[key] ];
-    const updatedElementIndex = cloneData.findIndex(item => item[idKey] === action.payload[idKey]);
+      idKeys.reduce((prev, next, index) => {
+        const isFinished = idKeys.length === index + 1;
 
-    cloneData[updatedElementIndex] = { ...cloneData[updatedElementIndex], ...action.payload };
-
-    return {
-      ...state,
-      [key]: cloneData
-    }
-  } else if (state[key].payload && isArray(state[key].payload)) {
-    const cloneData = [ ...state[key].payload ];
-
-    if (action.payload.payload) {
-      const updatedElementIndex = cloneData.findIndex(item => item[idKey] === action.payload.payload[idKey]);
-
-      cloneData[updatedElementIndex] = action.payload.payload;
-    }
-
-    return {
-      ...state,
-      [key]: {
-        ...state[key],
-        ...action.payload,
-        payload: cloneData
-      }
-    }
-  } else if (isObject(state[key].payload)) {
-    const { payload, ...stateData } = state[key];
-
-    if (idKey) {
-      return {
-        ...state,
-        [key]: {
-          ...stateData,
-          ...getActionStatusData(action),
-          payload: {
-            ...payload,
-            [action.payload[idKey]]: getActionPayload(action).payload,
-          }
+        if (!key && actionData[next]) {
+          key = next;
         }
-      }
+
+        if (actionData[next] && isFinished) {
+          prev[actionData[next]] = {...prev[actionData[next]], ...actionData}
+        } else if (!actionData[next] && isFinished) {
+          // delete IdKey in updated object
+          delete actionData[key];
+
+          prev[next] = {...prev[next], ...actionData}
+        }
+
+        return prev[next] || prev[actionData[next]];
+      }, cloneData);
+
     } else {
-      return {
-        ...state,
-        [key]: {
-          ...stateData,
-          ...getActionStatusData(action),
-          payload: {
-            ...payload,
-            ...getActionPayload(action).payload,
+      cloneData = { ...cloneData,  ...actionData}
+    }
+    updatedData.payload = cloneData;
+
+    return updateState(updatedData);
+  } else if (isArray(stateData)) {
+    let cloneData = [...stateData ];
+
+    if (idKeys && idKeys.length) {
+      idKeys.reduce((prev, next) => {
+        const key = actionData[next];
+        stateData.forEach((item, index) => {
+          if (item[next] === key) {
+            cloneData[index] = { ...cloneData[index], ...actionData };
           }
+        })
+      }, stateData);
+    } else {
+      cloneData = { ...cloneData,  ...actionData}
+    }
+
+    updatedData.payload = cloneData;
+
+    return updateState(updatedData);
+  }
+
+  return updateState(updatedData);
+};
+
+export const deleteReducers = (state: Object, action: Action, settings: ActionSettings): Object => {
+  const { idKeys, key, hasPayload } = settings;
+
+  const actionData = getActionPayload(action);
+  const stateData = state[key].payload || state[key];
+  const actionStatus = getActionStatusData(action, hasPayload);
+
+  const updatedData = {
+    key,
+    state,
+    hasPayload,
+    actionStatus,
+    payload: actionData
+  };
+
+  if (isObject(stateData)) {
+    let cloneData = { ...stateData };
+
+    if (idKeys && idKeys.length) {
+      idKeys.reduce((prev, next) => {
+        if (actionData === cloneData[actionData][next]) {
+          delete cloneData[actionData]
         }
-      }
+      }, stateData);
     }
+
+    updatedData.payload = cloneData;
+
+    return updateState(updatedData);
+  } else if (isArray(stateData)) {
+    let cloneData = [...stateData ];
+
+    if (idKeys && idKeys.length) {
+      idKeys.reduce((prev, next) => {
+        const key = actionData;
+
+        cloneData = cloneData.filter(item => {
+          if (item[next] !== key) {
+            return item
+          }
+        })
+      }, stateData);
+    } else {
+      cloneData = { ...cloneData,  ...actionData}
+    }
+
+    updatedData.payload = cloneData;
+
+    return updateState(updatedData);
   }
 
-  if (idKey) {
-    return {
-      ...state,
-      [key]: {
-        ...state[key],
-        [action.payload[idKey]]: action.payload,
-      }
-    }
-  } else {
-    return {
-      ...state,
-      [key]: action.payload
-    }
-  }
+  return state;
 };
 
-export const deleteReducers = (
-  state: Object,
-  action: Action,
-  settings: ActionSettings
-): Object => {
-  const { idKey, key } = settings;
-
-  if (isMap(state[key])) {
-    const itemId = action.payload;
-    const data = state[key];
-    const cloneData = cloneMap(data);
-
-    cloneData.delete(itemId);
-
-    return {
-      ...state,
-      [key]: cloneData
-    }
-  } else if (isMap(state[key].payload)) {
-    const itemId = action.payload.payload;
-    const data = state[key].payload;
-    const cloneData = cloneMap(data);
-
-    cloneData.delete(itemId);
-
-    return {
-      ...state,
-      [key]: {
-        ...state[key],
-        payload: cloneData
-      }
-    }
-  } else if (isArray(state[key])) {
-    const itemId = action.payload;
-    const cloneData = [ ...state[key] ];
-    const updatedData = cloneData.filter(item => item[idKey] !== itemId);
-
-    return {
-      ...state,
-      [key]: updatedData
-    }
-  } else if (state[key].payload && isArray(state[key].payload)) {
-    const itemId = action.payload.payload;
-
-    const cloneData = [ ...state[key].payload ];
-    const updatedData = cloneData.filter(item => item[idKey] !== itemId);
-
-    return {
-      ...state,
-      [key]: {
-        ...state[key],
-        ...action.payload,
-        payload: updatedData,
-      }
-    }
-  }
-
-  return state
-};
-
-export const clearReducers = (
-  state: Object,
-  action: Action,
-  settings: ActionSettings
-) => {
-  const { key }  = settings;
-
-  return {
-    ...state,
-    [key]: action.payload
-  }
-};
+export const clearReducers = (state: Object, action: Action, settings: ActionSettings) => ({
+  ...state,
+  [settings.key]: getActionPayload(action),
+});
