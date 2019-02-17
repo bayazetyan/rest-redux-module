@@ -74,6 +74,8 @@ export default class RESTService {
         requestUrl += `?${urlWithParams}`;
       } else if (requestOptions.headers['Content-Type'] === 'application/json') {
         body = JSON.stringify(data);
+      } else {
+        body = data;
       }
     }
 
