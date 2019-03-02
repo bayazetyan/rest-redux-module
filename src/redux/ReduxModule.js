@@ -75,22 +75,23 @@ export default class ReduxModule {
     } = props;
 
     const actionName = name || type;
-    const keyValue = key || RESULT_KEY;
+    const keyValue = idKeys ? idKeys[0] : key || RESULT_KEY;
+    const keys = idKeys || [keyValue];
 
-    if (key && !this[`has_${key}`]) {
-      this[`has_${key}`] = true;
-      this[`${key}withoutStatus`] = !apiCall || withoutStatus || withoutResponse;
+    if (keyValue && !this[`has_${keyValue}`]) {
+      this[`has_${keyValue}`] = true;
+      this[`${keyValue}withoutStatus`] = !apiCall || withoutStatus || withoutResponse;
     }
-    console.log('LOG ::::::> this[`${key}withoutStatus`] <::::::',this[`${key}withoutStatus`])
+
     this.getActionGroup(type).push({
-      idKeys,
       apiCall,
       actionName,
+      idKeys: keys,
       withoutStatus,
-      key: keyValue,
       returnResponse,
       withoutResponse,
-      hasPayload: !this[`${key}withoutStatus`],
+      prefix: this.prefix,
+      hasPayload: !this[`${keyValue}withoutStatus`],
     });
 
     return (dispatch, ...args) => {
@@ -181,33 +182,30 @@ export default class ReduxModule {
     const localUpdateValue = type === Actions.DELETE || type === Actions.UPDATE || type === Actions.CREATE;
 
     const {
+      key,
+      idKeys,
       apiCall,
       callback,
       withoutStatus,
       returnResponse,
-      localeUpdate = localUpdateValue,
-      alternativeRequest,
       alternativeResponse,
+      localeUpdate = localUpdateValue,
     } = props;
 
+    const keyValue = idKeys ? idKeys[0] : key || RESULT_KEY;
     const { message, status, successStatusValue, errors } = this._getResponseMap();
 
     const actionType = `${actionName}${this.prefix}`;
-
-    if (isFunction(alternativeRequest)) {
-      return alternativeRequest(dispatch, apiCallArguments, actionType);
-    }
 
     if (!apiCall) {
       this.mainAction(dispatch, actionType, apiCallArguments, props)
     } else {
       if (!withoutStatus) {
-        dispatch({ type: `${actionType}_PENDING`, payload: PENDING_RESULT });
+        dispatch({ type: `${actionType}_PENDING`, payload: {...PENDING_RESULT, payload: this.defaultState[keyValue]} });
       }
 
       return apiCall(...apiCallArguments)
         .then(response => {
-          console.log('LOG ::::::> response <::::::',response)
           if (
             (response[status] !== void(0) && response[status] !== successStatusValue)
             || response[errors]
@@ -233,7 +231,7 @@ export default class ReduxModule {
             const payload = withoutStatus
               ? payloadData
               : { ...SUCCESS_RESULT, payload: payloadData };
-            console.log('LOG ::::::> payload <::::::',payload)
+
             dispatch({
               payload,
               type: `${actionType}_SUCCESS`,
