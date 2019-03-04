@@ -5,10 +5,11 @@ import {
   deepClone,
 } from '../utils/misc';
 
-export const createMap = (data: any, idKeys: string[], override: boolean = false): Result => {
-  const map = {};
+export const createMap = (data: any, state: Object, idKeys: Array<string>, override: boolean = false): Result => {
+  let clear = true;
   const hasPayload = !!data.payload;
   const isPending = data.status && data.status === 1;
+  const map = deepClone(hasPayload ? state.payload : state);
 
   const payload = hasPayload ? deepClone(data.payload) : isPending ? {} : deepClone(data);
 
@@ -34,7 +35,6 @@ export const createMap = (data: any, idKeys: string[], override: boolean = false
 
     payload && payload.length && payload.forEach(item => {
       idKeys.reduce((prev, next, index, iterator) => {
-
         if (!item[next] && !prev[next] && index < iterator.length - 1) {
           return prev[next] = {};
         } else if (prev[next] && index < iterator.length - 1) {
@@ -42,18 +42,29 @@ export const createMap = (data: any, idKeys: string[], override: boolean = false
         } else {
           const key = item[next] || next;
 
-           if (prev && prev[key]) {
+          if (prev && prev[key]) {
             if ( Array.isArray(prev[key])) {
-              prev[key] = [ ...prev[key], item ]
-            } else {
-              if (override) {
-                prev[key] = item
+              if (!clear) {
+                prev[key] = [...prev[key], item ]
               } else {
-                prev[key] = [ prev[key], item ]
+                if (idKeys.includes(key)) {
+                  prev[key] = payload;
+                } else {
+                  prev[key] = payload.filter(p => p[next] === key)
+                }
+
+              }
+            } else {
+              if (override || clear) {
+                prev[key] = item;
+              } else {
+                clear = false;
+                prev[key] = [ prev[key], item ];
               }
             }
           } else {
-             prev[key] = item
+            clear = false;
+            prev[key] = item
           }
         }
       }, map);

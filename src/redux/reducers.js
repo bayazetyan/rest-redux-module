@@ -21,11 +21,14 @@ export const getReducers = (state: Object, action: Action, settings: ActionSetti
   const {
     key,
     nestedKeys,
+    actionStatus,
     actionPayload,
   } = getReducerProps(idKeys, action, hasPayload);
 
   const stateData = state[key] || {};
-  const data = createMap(actionPayload, nestedKeys);
+  const payloadStatus = actionPayload.status && actionPayload.status === 1;
+
+  const data = !payloadStatus ? createMap(actionPayload, stateData, nestedKeys) : actionStatus;
 
   if (!data) {
     return state;
@@ -67,27 +70,39 @@ export const addReducers = (state: Object, action: Action, settings: ActionSetti
 
   let stateData = state[key] ? state[key].payload || state[key] : {};
 
-  if (nestedKeys) {
-    stateData = getNestedData(stateData, nestedKeys);
-  }
-
   let cloneStateData = deepClone(stateData);
+  const nestedStateData = getNestedData(stateData, nestedKeys);
   const pendingStatus = actionPayload.status && actionPayload.status === 1;
   const cloneActionPayload = pendingStatus ? null : deepClone(actionPayload.payload || actionPayload);
+  const lastKey = nestedKeys[nestedKeys.length - 1];
 
-  if (isObject(stateData) && cloneActionPayload) {
+  if (isObject(nestedStateData) && cloneActionPayload) {
     if (nestedKeys && nestedKeys.length) {
-      const mergePayload = [...Object.values(stateData), cloneActionPayload];
-      cloneStateData = createMap(mergePayload, nestedKeys, true);
+      nestedKeys.reduce((prev, next) => {
+        if (prev && prev[next]) {
+          prev[next][cloneActionPayload[lastKey]] = cloneActionPayload;
+        }
+        return prev[next];
+      }, cloneStateData);
     }
 
     updatedStateData.payload = cloneStateData;
 
     return updateState(updatedStateData);
-  } else if (isArray(stateData) && cloneActionPayload) {
-    cloneStateData.push(cloneActionPayload);
+  } else if (isArray(nestedStateData) && cloneActionPayload) {
+    nestedKeys.reduce((prev, next) => {
+      if (prev && prev[next]) {
+        const isExists = prev[next].find(i => i[lastKey] === cloneActionPayload[lastKey]);
+        if (!isExists) {
+          return prev[next].push(cloneActionPayload);
+        } else {
+          return prev[next];
+        }
 
-    updatedStateData.payload = createMap(cloneStateData, nestedKeys);
+      }
+      return prev[next];
+    }, cloneStateData);
+    updatedStateData.payload = cloneStateData;
 
     return updateState(updatedStateData);
   } else if (!pendingStatus) {
@@ -117,18 +132,14 @@ export const updateReducers = (state: Object, action: Action, settings: ActionSe
     payload: actionPayload
   };
 
-  const keys = !nestedKeys || nestedKeys.length === 1 ? null : nestedKeys.slice(0, -1);
   let stateData = state[key].payload || state[key];
-
-  if (nestedKeys) {
-    stateData = getNestedData(stateData, nestedKeys);
-  }
+  const nestedStateData = getNestedData(stateData, nestedKeys);
 
   let cloneStateData = deepClone(stateData);
   const pendingStatus = actionPayload.status && actionPayload.status === 1;
   const cloneActionPayload = pendingStatus ? null : deepClone(actionPayload.payload || actionPayload);
 
-  if (isObject(stateData) && cloneActionPayload) {
+  if (isObject(nestedStateData) && cloneActionPayload) {
     if (nestedKeys && nestedKeys.length) {
       let nextKey = '';
 
@@ -157,34 +168,37 @@ export const updateReducers = (state: Object, action: Action, settings: ActionSe
 
         return prev[next] || (cloneActionPayload && prev[cloneActionPayload[next]]) || prev;
       }, cloneStateData);
-
     } else {
       cloneStateData = { ...cloneStateData, ...cloneActionPayload};
     }
-    updatedStateData.payload = keys ? createMap(cloneStateData, keys) : cloneStateData;
+    updatedStateData.payload = cloneStateData
 
     return updateState(updatedStateData);
-  } else if (isArray(stateData) && cloneActionPayload) {
+  } else if (isArray(nestedStateData) && cloneActionPayload) {
 
     if (nestedKeys && nestedKeys.length) {
-      nestedKeys.reduce((prev, next) => {
-        const payloadData = cloneActionPayload[next];
+      const lastKey = nestedKeys[nestedKeys.length - 1];
 
-        stateData.forEach((item, index) => {
-          if (item[next] === payloadData && item[next] !== void(0) && payloadData !== void(0)) {
-            cloneStateData[index] = { ...cloneStateData[index], ...cloneActionPayload };
-          }
-        })
+      nestedKeys.reduce((prev, next) => {
+        if (prev && !prev[next]) {
+          return prev = prev.map((item, i) => {
+            if (item[lastKey] === cloneActionPayload[lastKey]) {
+              return prev[i] = { ...nestedStateData[i], ...cloneActionPayload }
+            }
+            return item;
+          });
+        }
+        return prev[next]
       }, cloneStateData);
     } else {
       cloneStateData = { ...cloneStateData, ...cloneActionPayload}
     }
 
-    updatedStateData.payload = keys ? createMap(cloneStateData, keys) : cloneStateData;
+    updatedStateData.payload = cloneStateData;
 
     return updateState(updatedStateData);
   } else if (!pendingStatus) {
-    updatedStateData.payload = createMap(cloneActionPayload, nestedKeys);
+    updatedStateData.payload = createMap(cloneActionPayload, stateData, nestedKeys);
   } else {
     updatedStateData.payload = cloneStateData;
   }
@@ -211,44 +225,45 @@ export const deleteReducers = (state: Object, action: Action, settings: ActionSe
   };
 
   let stateData = state[key].payload || state[key];
-  const keys = nestedKeys.length === 1 ? null : nestedKeys.slice(0,-1);
-
-  if (nestedKeys) {
-    stateData = getNestedData(stateData, nestedKeys);
-  }
+  const nestedStateData = getNestedData(stateData, nestedKeys);
 
   let cloneStateData = deepClone(stateData);
   const pendingStatus = actionPayload.status && actionPayload.status === 1;
   const cloneActionPayload = pendingStatus ? null : deepClone(actionPayload.payload || actionPayload);
 
-  if (isObject(stateData) && cloneActionPayload) {
+  if (isObject(nestedStateData) && cloneActionPayload) {
     if (nestedKeys && nestedKeys.length) {
-      nestedKeys.forEach(key => {
-        if (cloneStateData[cloneActionPayload] && actionPayload === cloneStateData[cloneActionPayload][key]) {
-          delete cloneStateData[cloneActionPayload]
+      nestedKeys.reduce((prev, next) => {
+        if (prev && prev[next]) {
+          delete prev[next][cloneActionPayload];
         }
-      });
+        return prev[next];
+      }, cloneStateData);
     }
 
-    updatedStateData.payload = createMap(cloneStateData, keys);
+    updatedStateData.payload = cloneStateData;
 
     return updateState(updatedStateData);
-  } else if (isArray(stateData) && cloneActionPayload) {
+  } else if (isArray(nestedStateData) && cloneActionPayload) {
+    const lastKey = nestedKeys[nestedKeys.length - 1];
+
     if (nestedKeys && nestedKeys.length) {
-      nestedKeys.forEach(key => {
-        cloneStateData = cloneStateData.filter(item => {
-          if (item[key] !== cloneActionPayload) {
-            return item
-          }
-        })
-      });
+      nestedKeys.reduce((prev, next) => {
+        if (prev && prev[next]) {
+          return prev[next] = prev[next].filter(item => {
+            if (item[lastKey] !== cloneActionPayload) {
+              return item
+            }
+          });
+        }
+
+        return prev[next];
+      }, cloneStateData);
     } else if (!pendingStatus) {
       cloneStateData = [...cloneStateData, ...cloneActionPayload]
-    } else {
-      updatedStateData.payload = cloneStateData;
     }
 
-    updatedStateData.payload = createMap(cloneStateData, keys);
+    updatedStateData.payload = cloneStateData;
 
     return updateState(updatedStateData);
   }
