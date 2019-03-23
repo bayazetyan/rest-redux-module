@@ -5,7 +5,12 @@ import {
   deepClone,
 } from '../utils/misc';
 
-export const createMap = (data: any, state: Object, idKeys: Array<string>, override: boolean = false): Result => {
+export const createMap = (
+  data: any,
+  state: Object,
+  idKeys: Array<string>,
+  override: boolean = false
+): Result => {
   let clear = true;
   const hasPayload = !!data.payload;
   const isPending = data.status && data.status === 1;

@@ -26,9 +26,9 @@ export default class RESTService {
 
   static init = (settings: Object = {}): void => {
     RESTService.settings = { ...RESTService.settings, ...settings };
+
     RESTService.apiUrl = settings.apiUrl || '';
     RESTService.baseUrl = settings.baseUrl || '';
-    RESTService.devUrl = settings.devUrl || '';
   };
 
   static updateSettings = (settings: Object) => {
@@ -58,8 +58,8 @@ export default class RESTService {
     data: ?Object,
     opt: ?Object
   ): Promise => {
-    const { useDev = false, ...options } = opt;
-    const host = useDev ? RESTService.devUrl : RESTService.baseUrl;
+    const { host: baseUrl, ...options } = opt;
+    const host = baseUrl || RESTService.baseUrl;
 
     let requestUrl = `${host}${RESTService.apiUrl}${path}`;
     let didTimeOut = false;
@@ -72,7 +72,9 @@ export default class RESTService {
         const urlWithParams = this.urlWithParams(data);
 
         requestUrl += `?${urlWithParams}`;
-      } else if (requestOptions.headers['Content-Type'] === 'application/json') {
+      } else if (requestOptions.headers['Content-Type'] === 'application/json'
+        || requestOptions.headers['Content-Type'] === 'text/json'
+      ) {
         body = JSON.stringify(data);
       } else {
         body = data;
@@ -166,6 +168,7 @@ export default class RESTService {
   };
 
   mergeOptions = (method: string, opt: ?Object): Object => {
+
     if (opt !== null) {
       const { headers, ...options } = opt;
 

@@ -171,7 +171,7 @@ export const updateReducers = (state: Object, action: Action, settings: ActionSe
     } else {
       cloneStateData = { ...cloneStateData, ...cloneActionPayload};
     }
-    updatedStateData.payload = cloneStateData
+    updatedStateData.payload = cloneStateData;
 
     return updateState(updatedStateData);
   } else if (isArray(nestedStateData) && cloneActionPayload) {
@@ -191,7 +191,7 @@ export const updateReducers = (state: Object, action: Action, settings: ActionSe
         return prev[next]
       }, cloneStateData);
     } else {
-      cloneStateData = { ...cloneStateData, ...cloneActionPayload}
+      cloneStateData = { ...cloneStateData, ...cloneActionPayload };
     }
 
     updatedStateData.payload = cloneStateData;
