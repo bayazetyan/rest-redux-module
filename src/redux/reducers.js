@@ -72,9 +72,10 @@ export const addReducers = (state: Object, action: Action, settings: ActionSetti
 
   let cloneStateData = deepClone(stateData);
   const nestedStateData = getNestedData(stateData, nestedKeys);
+
   const pendingStatus = actionPayload.status && actionPayload.status === 1;
   const cloneActionPayload = pendingStatus ? null : deepClone(actionPayload.payload || actionPayload);
-  const lastKey = nestedKeys[nestedKeys.length - 1];
+  const lastKey = nestedKeys ? nestedKeys[nestedKeys.length - 1] : null;
 
   if (isObject(nestedStateData) && cloneActionPayload) {
     if (nestedKeys && nestedKeys.length) {
@@ -84,22 +85,28 @@ export const addReducers = (state: Object, action: Action, settings: ActionSetti
         }
         return prev[next];
       }, cloneStateData);
+    } else {
+      cloneStateData = cloneActionPayload
     }
 
     updatedStateData.payload = cloneStateData;
 
     return updateState(updatedStateData);
   } else if (isArray(nestedStateData) && cloneActionPayload) {
-    nestedKeys.reduce((prev, next) => {
-      if (prev && prev[next]) {
-        const isExists = prev[next].find(i => i[lastKey] === cloneActionPayload[lastKey]);
-        if (!isExists) {
-          return prev[next].push(cloneActionPayload);
-        } else {
-          return prev[next];
-        }
 
+    nestedKeys.reduce((prev, next) => {
+      if (prev && (isArray(prev[next]) || isArray(prev))) {
+        const data = isArray(prev) ? prev : prev[next];
+
+        const isExists = data.find(i => i[lastKey] === cloneActionPayload[lastKey]);
+
+        if (!isExists) {
+          return isArray(prev) ? prev.push(cloneActionPayload) : prev[next].push(cloneActionPayload);
+        } else {
+          return isArray(prev) ? prev : prev[next];
+        }
       }
+
       return prev[next];
     }, cloneStateData);
     updatedStateData.payload = cloneStateData;
@@ -249,12 +256,23 @@ export const deleteReducers = (state: Object, action: Action, settings: ActionSe
 
     if (nestedKeys && nestedKeys.length) {
       nestedKeys.reduce((prev, next) => {
-        if (prev && prev[next]) {
-          return prev[next] = prev[next].filter(item => {
-            if (item[lastKey] !== cloneActionPayload) {
-              return item
+        if (prev && (prev[next] || isArray(prev))) {
+          if (isArray(prev) && nestedKeys.length < 2) {
+            cloneStateData = cloneStateData.filter(item => {
+              if (item[lastKey] !== cloneActionPayload) {
+                return item
+              }
+            });
+            return prev;
+          } else {
+            if (isArray(prev[next])) {
+              return prev[next] = prev[next].filter(item => {
+                if (item[lastKey] !== cloneActionPayload) {
+                  return item
+                }
+              });
             }
-          });
+          }
         }
 
         return prev[next];

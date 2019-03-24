@@ -91,11 +91,11 @@ export const createMap = (
 };
 
 export const getNestedData = (obj: Object, keys: string[]) => {
-  return keys.reduce((prev, next) => {
+  return keys ? keys.reduce((prev, next) => {
     if (prev && prev[next]) {
       return prev[next]
     } else if (prev && !prev[next]) {
       return prev
     }
-  } , obj)
+  } , obj) : obj;
 };
