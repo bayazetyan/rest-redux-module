@@ -7,13 +7,13 @@ import {
 
 export const createMap = (
   data: any,
-  state: Object,
+  state: any,
   idKeys: Array<string>,
   override: boolean = false
 ): Result => {
   let clear = true;
   const hasPayload = !!data.payload;
-  const isPending = data.status && data.status === 1;
+  const isPending = !!data.status && data.status === 1;
   const map = deepClone(hasPayload ? state.payload : state);
 
   const payload = hasPayload ? deepClone(data.payload) : isPending ? {} : deepClone(data);

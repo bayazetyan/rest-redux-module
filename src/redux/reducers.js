@@ -25,14 +25,10 @@ export const getReducers = (state: Object, action: Action, settings: ActionSetti
     actionPayload,
   } = getReducerProps(idKeys, action, hasPayload);
 
-  const stateData = state[key] || {};
+  const stateData = state[key];
   const payloadStatus = actionPayload.status && actionPayload.status === 1;
 
   const data = !payloadStatus ? createMap(actionPayload, stateData, nestedKeys) : actionStatus;
-
-  if (!data) {
-    return state;
-  }
 
   if (isObject(actionPayload) && !withoutStatus) {
     return {

@@ -36,7 +36,7 @@ export const isEmpty = (obj: Object) => {
 };
 
 export const getActionPayload = (action: Action) => {
-  return action.payload || {};
+  return action.payload;
 };
 
 export const getActionStatusData = (action: Action) => {
