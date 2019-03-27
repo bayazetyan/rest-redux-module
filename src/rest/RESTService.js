@@ -210,4 +210,11 @@ export default class RESTService {
     data: ?Object,
     options: ?Object = {}
   ) => this._fetch(path, DELETE, data, options);
+
+  create = (
+    method,
+    path: string,
+    data: ?Object,
+    options: ?Object = {}
+  ) => this._fetch(path, method.toUpperCase(), data, options);
 }

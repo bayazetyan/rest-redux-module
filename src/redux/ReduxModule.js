@@ -221,7 +221,7 @@ export default class ReduxModule {
           } else {
             const hasAlternativeResponse = isFunction(alternativeResponse);
             const responseData = hasAlternativeResponse
-              ? alternativeResponse(response)
+              ? alternativeResponse(response, apiCallArguments)
               : this.getResponseData(response, returnResponse);
 
             const payloadData = localeUpdate
@@ -239,7 +239,7 @@ export default class ReduxModule {
           }
 
           if (isFunction(callback)) {
-            callback(response, dispatch);
+            callback(response, dispatch, apiCallArguments);
           }
 
           return response;
