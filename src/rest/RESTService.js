@@ -6,10 +6,7 @@ const PUT = 'PUT';
 const POST = 'POST';
 const DELETE = 'DELETE';
 
-const defaultHeaders = {
-  'Accept': 'application/json',
-  'Content-Type': 'application/json',
-};
+const defaultHeaders = {};
 
 const defaultSettings = {
   fetchTimeout: 60 * 1000,
@@ -129,8 +126,17 @@ export default class RESTService {
     });
   };
 
-  getHeaders = (customHeaders: ?Object = {}): Object => {
-    const { headers, tokenType } = RESTService.settings;
+  getHeaders = (customHeaders?: Object = {}, deleteHeaders?: string[]): Object => {
+    const { tokenType } = RESTService.settings;
+    const headers = {...RESTService.settings.headers};
+
+    if (deleteHeaders && deleteHeaders.length) {
+      deleteHeaders.forEach(headerKey => {
+        if (headers[headerKey]) {
+          delete headers[headerKey];
+        }
+      })
+    }
 
     const requestHeaders = {
       ...defaultHeaders,
@@ -170,12 +176,12 @@ export default class RESTService {
   mergeOptions = (method: string, opt: ?Object): Object => {
 
     if (opt !== null) {
-      const { headers, ...options } = opt;
+      const { headers, deleteHeaders, ...options } = opt;
 
       return {
         method,
         ...RESTService.settings.options,
-        ...this.getHeaders(headers),
+        ...this.getHeaders(headers, deleteHeaders),
         ...options,
       }
     } else {
