@@ -204,18 +204,42 @@ export default class ReduxModule {
         dispatch({ type: `${actionType}_PENDING`, payload: {...PENDING_RESULT, payload: this.defaultState[keyValue]} });
       }
 
-      return apiCall(...apiCallArguments)
-        .then(response => {
+      let responseOptions = {};
+
+      return apiCall(...apiCallArguments).then(response => {
+        if (response instanceof Response) {
+          responseOptions = {
+            ok: response.ok,
+            status: response.status,
+            statusText: response.statusText
+          };
+
+          if (response.headers.get("content-type") !== 'application/json'
+            && responseOptions.status >= 400)
+          {
+            return { error: response.statusText }
+          } else {
+            return response.json();
+          }
+        }
+
+        return response;
+      }).then(response => {
           if (
             (response[status] !== void(0) && response[status] !== successStatusValue)
             || response[errors]
-            || response.status >= 400
+            || (response.status && response.status >= 400)
+            || responseOptions.ok === false
           ) {
             dispatch({
               type: `${actionType}_ERROR`,
               payload: {
                 status: 0,
-                error: response[message] || response[errors] || response.error
+                error: response[message]
+                  || response[errors]
+                  || response.error
+                  || response
+                  || response.statusText
               }
             });
           } else {

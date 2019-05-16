@@ -26,6 +26,7 @@ export default class RESTService {
 
     RESTService.apiUrl = settings.apiUrl || '';
     RESTService.baseUrl = settings.baseUrl || '';
+    RESTService.token = settings.token || '';
   };
 
   static updateSettings = (settings: Object) => {
@@ -113,7 +114,7 @@ export default class RESTService {
         console.log(e);
       }
 
-      fetch(requestUrl, requestOptions)
+      fetch(encodeURI(requestUrl), requestOptions)
         .then(function(response) {
           clearTimeout(timeout);
           if (!didTimeOut) {

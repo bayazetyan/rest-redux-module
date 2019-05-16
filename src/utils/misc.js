@@ -42,10 +42,8 @@ export const getActionPayload = (action: Action) => {
 export const getActionStatusData = (action: Action) => {
   const actionData = getActionPayload(action);
 
-  const { payload, ...actionStatusData } = actionData;
-
-  if (payload) {
-    return actionStatusData;
+  if (actionData.payload) {
+    return { status: actionData.status, error: actionData.error };
   } else {
     return { status: 2, error: null };
   }
